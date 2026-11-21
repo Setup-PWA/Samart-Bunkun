@@ -4,8 +4,6 @@ import {
   Archive,
   CheckCircle2,
   ClipboardList,
-  Clock,
-  CreditCard,
   Database,
   Droplets,
   ExternalLink,
@@ -559,7 +557,7 @@ export default function App() {
   // Dynamic filter dropdown options derived from real Sheet data
   const statusOptions = useMemo(() => {
     const base = [
-      'รอตรวจสอบ',
+      'รับคำร้องแล้ว(รอสำรวจ)',
       'รอชำระเงิน',
       'อยู่ระหว่างติดตั้ง',
       'ติดตั้งเสร็จสิ้น',
@@ -579,19 +577,6 @@ export default function App() {
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'th'));
   }, [records]);
-
-  // KPI summary numbers
-  const kpiStats = useMemo(() => {
-    const total = filteredRecords.length;
-    const completed = filteredRecords.filter(
-      (r) => r.status === 'ติดตั้งเสร็จสิ้น' || r.status === 'เสร็จสิ้น'
-    ).length;
-    const inProgress = filteredRecords.filter(
-      (r) => r.status === 'อยู่ระหว่างติดตั้ง' || r.status === 'รอตรวจสอบ'
-    ).length;
-    const unpaid = filteredRecords.filter((r) => r.status === 'รอชำระเงิน').length;
-    return { total, completed, inProgress, unpaid };
-  }, [filteredRecords]);
 
   const completedEligibleUnbatchedCount = useMemo(
     () => getEligibleCompletedUnbatchedRecords(records, completedBatches).eligible.length,
@@ -1084,12 +1069,12 @@ export default function App() {
           {/* Zone 1: Single-line Brand Wordmark */}
           <a
             href="#map-section"
-            className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-sm sm:text-lg font-bold tracking-tight text-white"
+            className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-xs sm:text-base lg:text-lg font-bold tracking-tight text-white"
           >
             <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white text-[#0A3A82] dark:bg-[#133B70] dark:text-[#7CC4FF] dark:border dark:border-[#255799] shadow-xs flex items-center justify-center shrink-0">
               <Droplets className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
-            <span className="truncate">ระบบติดตามมาตรวัดน้ำ</span>
+            <span className="truncate">ระบบติดตามคำขอติดตั้ง / ย้ายมาตรวัดน้ำ</span>
           </a>
 
           {/* Zone 2: Clean Single-line Nav Links */}
@@ -1385,92 +1370,13 @@ export default function App() {
           </div>
         )}
 
-        {/* 4-Column KPI Strip (Top Accent Bar + Square Icon Badge + Subtle Corner Watermark) */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#0B4DA2] dark:border-t-[#3B8CE2] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
-            <ClipboardList
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-[#0B4DA2] dark:text-[#5EA6E0] opacity-[0.06] dark:opacity-[0.08]"
-            />
-            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#0B4DA2] dark:bg-[#256EC2] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
-              <ClipboardList className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
-                {kpiStats.total}
-              </span>
-              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
-                รายการ
-              </span>
-            </div>
-            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
-              คำขอทั้งหมด
-            </span>
-          </div>
-
-          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#059669] dark:border-t-[#10B981] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
-            <CheckCircle2
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-emerald-600 dark:text-emerald-400 opacity-[0.07] dark:opacity-[0.08]"
-            />
-            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#059669] dark:bg-[#10B981] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
-              <CheckCircle2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
-                {kpiStats.completed}
-              </span>
-              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
-                รายการ
-              </span>
-            </div>
-            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
-              ติดตั้งเสร็จสิ้น
-            </span>
-          </div>
-
-          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#D97706] dark:border-t-[#F59E0B] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
-            <Clock
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-amber-600 dark:text-amber-400 opacity-[0.07] dark:opacity-[0.08]"
-            />
-            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#D97706] dark:bg-[#F59E0B] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
-              <Clock className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
-                {kpiStats.inProgress}
-              </span>
-              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
-                รายการ
-              </span>
-            </div>
-            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
-              อยู่ระหว่างติดตั้ง / รอตรวจสอบ
-            </span>
-          </div>
-
-          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#E11D48] dark:border-t-[#F43F5E] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
-            <CreditCard
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-rose-600 dark:text-rose-400 opacity-[0.07] dark:opacity-[0.08]"
-            />
-            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#E11D48] dark:bg-[#F43F5E] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
-              <CreditCard className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
-                {kpiStats.unpaid}
-              </span>
-              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
-                รายการ
-              </span>
-            </div>
-            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
-              รอชำระเงิน
-            </span>
-          </div>
-        </section>
+        {/* Analytics Charts (Moved to Top KPI Position) */}
+        <AnalyticsCharts
+          records={filteredRecords}
+          activeStatusFilter={filterStatus}
+          onFilterByStatus={setFilterStatus}
+          isDark={isDark}
+        />
 
         {/* Filter Controls (Deep Navy Header Bar + Clean Inputs) */}
         <section className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl overflow-hidden shadow-xs transition-colors">
@@ -1609,14 +1515,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Analytics Charts */}
-        <AnalyticsCharts
-          records={filteredRecords}
-          activeStatusFilter={filterStatus}
-          onFilterByStatus={setFilterStatus}
-          isDark={isDark}
-        />
-
         {/* Admin Workspace with Tab Bar (Admin Only) */}
         {isAdmin && (
           <section
@@ -1743,11 +1641,28 @@ export default function App() {
         )}
       </main>
 
-      {/* Quiet Footer */}
-      <footer className="bg-white dark:bg-[#0D192B] border-t border-[#DCE6F3] dark:border-[#1B314E] py-5 px-4 sm:px-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors">
-        <p>
-          ระบบวิเคราะห์และติดตามคำขอติดตั้ง/ย้ายมาตรวัดน้ำ · เชื่อมโยงข้อมูล Google Sheets / AppSheet แบบเรียลไทม์
-        </p>
+      {/* Footer */}
+      <footer className="bg-white dark:bg-[#0D192B] border-t border-[#DCE6F3] dark:border-[#1B314E] py-5 px-4 sm:px-6 text-center text-xs text-slate-600 dark:text-slate-300 transition-colors">
+        <div className="max-w-[1440px] mx-auto space-y-1">
+          <p className="font-semibold text-slate-800 dark:text-slate-100">
+            พัฒนาโดย # งานบริการและควบคุมน้ำสูญเสีย
+          </p>
+          <p className="text-slate-600 dark:text-slate-300">
+            #นายสามารถ บุญกัน นายช่างโยธา 6
+          </p>
+          <p className="text-[#0B4DA2] dark:text-[#66B2FF] font-medium">
+            กปภ.สาขาขาณุวรลักษบุรี{' '}
+            <a
+              href="tel:055771277"
+              className="hover:underline tabular-nums"
+            >
+              Tel : 055 771 277
+            </a>
+          </p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+            ระบบติดตามคำขอติดตั้ง / ย้ายมาตรวัดน้ำ · เชื่อมโยงข้อมูล Google Sheets / AppSheet แบบเรียลไทม์
+          </p>
+        </div>
       </footer>
 
       {/* Modals */}

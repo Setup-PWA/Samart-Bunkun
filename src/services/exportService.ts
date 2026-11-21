@@ -57,7 +57,7 @@ const PREFERRED_STATUS_ORDER = [
   'ติดตั้งเสร็จสิ้น',
   'อยู่ระหว่างติดตั้ง',
   'รอชำระเงิน',
-  'รอตรวจสอบ',
+  'รับคำร้องแล้ว(รอสำรวจ)',
   'ไม่มีเส้นท่อ/ยกเลิก',
 ];
 
@@ -77,7 +77,8 @@ export function computeExportAnalytics(records: MeterRequest[]): ExportAnalytics
   >();
 
   records.forEach((r) => {
-    const st = (r.status || 'รอตรวจสอบ').trim();
+    const rawSt = (r.status || '').trim();
+    const st = !rawSt || rawSt === 'รอตรวจสอบ' ? 'รับคำร้องแล้ว(รอสำรวจ)' : rawSt;
     const price = Number.isFinite(r.price) ? r.price : 0;
     totalAmount += price;
     if (r.latitude !== null && r.longitude !== null) {
@@ -85,7 +86,12 @@ export function computeExportAnalytics(records: MeterRequest[]): ExportAnalytics
     }
 
     const isDone = st === 'ติดตั้งเสร็จสิ้น' || st === 'เสร็จสิ้น' || st === 'ดำเนินการแล้ว';
-    const isProg = st === 'อยู่ระหว่างติดตั้ง' || st === 'รอตรวจสอบ' || st === 'กำลังดำเนินการ' || st === 'รอดำเนินการ';
+    const isProg =
+      st === 'อยู่ระหว่างติดตั้ง' ||
+      st === 'รับคำร้องแล้ว(รอสำรวจ)' ||
+      st === 'รอตรวจสอบ' ||
+      st === 'กำลังดำเนินการ' ||
+      st === 'รอดำเนินการ';
     const isUnpaid = st === 'รอชำระเงิน' || st === 'ค้างชำระ';
     const isCancelled = st === 'ไม่มีเส้นท่อ/ยกเลิก' || st === 'ยกเลิก';
 
@@ -505,7 +511,9 @@ function groupRecordsForScope(
   records.forEach((r) => {
     const key =
       scope === 'by_status'
-        ? (r.status || 'รอตรวจสอบ').trim()
+        ? !r.status || r.status.trim() === 'รอตรวจสอบ'
+          ? 'รับคำร้องแล้ว(รอสำรวจ)'
+          : r.status.trim()
         : (r.subdistrict && r.subdistrict.trim()) ||
           (r.locationSummary ? r.locationSummary.split(' ')[0].trim() : '') ||
           'ไม่ระบุตำบล';

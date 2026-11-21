@@ -104,7 +104,7 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
   const [province, setProvince] = useState('');
   const [phone, setPhone] = useState('');
   const [price, setPrice] = useState('0');
-  const [status, setStatus] = useState('รอตรวจสอบ');
+  const [status, setStatus] = useState('รับคำร้องแล้ว(รอสำรวจ)');
   const [latLngText, setLatLngText] = useState('');
   const [note, setNote] = useState('');
   const [pendingPhoto, setPendingPhoto] = useState<HousePhotoPayload | null>(null);
@@ -134,7 +134,7 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
     setProvince('');
     setPhone('');
     setPrice('0');
-    setStatus('รอตรวจสอบ');
+    setStatus('รับคำร้องแล้ว(รอสำรวจ)');
     setLatLngText('');
     setNote('');
     setPendingPhoto(null);
@@ -156,7 +156,12 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
       setProvince(editingRecord.province || '');
       setPhone(editingRecord.phone || '');
       setPrice(String(editingRecord.price ?? 0));
-      setStatus(editingRecord.status || 'รอตรวจสอบ');
+      const normalizedStatus = (editingRecord.status || '').trim();
+      setStatus(
+        !normalizedStatus || normalizedStatus === 'รอตรวจสอบ'
+          ? 'รับคำร้องแล้ว(รอสำรวจ)'
+          : normalizedStatus
+      );
       setLatLngText(formatLatLngString(editingRecord.latitude, editingRecord.longitude));
       setNote(editingRecord.note || '');
       setExistingPhotoUrl(editingRecord.housePhotoUrl || '');
@@ -416,15 +421,14 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              หมู่ที่ *
+              หมู่ที่ (ถ้ามี)
             </label>
             <select
-              required
               value={moo}
               onChange={(e) => setMoo(e.target.value)}
               className={`${inputCls} text-sm`}
             >
-              <option value="">เลือกหมู่ที่</option>
+              <option value="">เลือกหมู่ที่ (ถ้ามี)</option>
               {Array.from({ length: 25 }, (_, i) => String(i + 1)).map((m) => (
                 <option key={m} value={m}>
                   หมู่ที่ {m}
@@ -541,7 +545,7 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
             onChange={(e) => setStatus(e.target.value)}
             className={`${inputCls} text-sm`}
           >
-            <option value="รอตรวจสอบ">รอตรวจสอบ</option>
+            <option value="รับคำร้องแล้ว(รอสำรวจ)">รับคำร้องแล้ว(รอสำรวจ)</option>
             <option value="รอชำระเงิน">รอชำระเงิน</option>
             <option value="อยู่ระหว่างติดตั้ง">อยู่ระหว่างติดตั้ง</option>
             <option value="ติดตั้งเสร็จสิ้น">ติดตั้งเสร็จสิ้น</option>

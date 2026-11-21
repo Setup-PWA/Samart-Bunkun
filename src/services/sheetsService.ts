@@ -194,8 +194,9 @@ export function mapRowsToMeterRequests(rows: string[][]): {
     const rawPrice = getField(raw, ['ราคา', 'ยอดชำระ', 'ยอดชำระเงิน', 'Amount', 'Price']).replace(/,/g, '');
     const price = Number.parseFloat(rawPrice) || 0;
 
+    const rawStatus = getField(raw, ['สถานะ', 'สถานะการชำระเงิน', 'Status']).trim();
     const status =
-      getField(raw, ['สถานะ', 'สถานะการชำระเงิน', 'Status']) || 'รอตรวจสอบ';
+      !rawStatus || rawStatus === 'รอตรวจสอบ' ? 'รับคำร้องแล้ว(รอสำรวจ)' : rawStatus;
 
     const combinedLatLong = getField(raw, ['lat/long', 'Lat/Long', 'พิกัด', 'Location', 'Coordinates']);
     const latSeparate = getField(raw, ['latitude', 'Latitude', 'Lat']);
@@ -425,7 +426,7 @@ export function buildRowValuesForHeaders(
       return payload.price !== undefined && payload.price !== null ? String(payload.price) : '0';
     }
     if (['สถานะ', 'สถานะการชำระเงิน', 'status'].includes(h)) {
-      return payload.status || 'รอตรวจสอบ';
+      return payload.status || 'รับคำร้องแล้ว(รอสำรวจ)';
     }
     if (['lat/long', 'พิกัด', 'location', 'coordinates'].includes(h)) {
       return latLngCombined;

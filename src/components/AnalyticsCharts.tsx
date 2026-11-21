@@ -20,7 +20,8 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   const statusBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
     records.forEach((r) => {
-      const key = r.status || 'รอตรวจสอบ';
+      const raw = (r.status || '').trim();
+      const key = !raw || raw === 'รอตรวจสอบ' ? 'รับคำร้องแล้ว(รอสำรวจ)' : raw;
       counts[key] = (counts[key] || 0) + 1;
     });
 
@@ -28,7 +29,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       'ติดตั้งเสร็จสิ้น',
       'อยู่ระหว่างติดตั้ง',
       'รอชำระเงิน',
-      'รอตรวจสอบ',
+      'รับคำร้องแล้ว(รอสำรวจ)',
       'ไม่มีเส้นท่อ/ยกเลิก',
     ];
 
@@ -51,19 +52,65 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   }, [records]);
 
   const areaBreakdown = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const preferredOrder = [
+      'ติดตั้งเสร็จสิ้น',
+      'อยู่ระหว่างติดตั้ง',
+      'รอชำระเงิน',
+      'รับคำร้องแล้ว(รอสำรวจ)',
+      'ไม่มีเส้นท่อ/ยกเลิก',
+    ];
+
+    const areaMap: Record<
+      string,
+      {
+        count: number;
+        statuses: Record<string, { statusKey: string; count: number; meta: ReturnType<typeof getStatusMeta> }>;
+      }
+    > = {};
+
     records.forEach((r) => {
       const area =
         r.subdistrict ||
         (r.locationSummary ? r.locationSummary.split(' ')[0] : '') ||
         'ไม่ระบุตำบล';
-      counts[area] = (counts[area] || 0) + 1;
+      if (!areaMap[area]) {
+        areaMap[area] = { count: 0, statuses: {} };
+      }
+      areaMap[area].count += 1;
+
+      const raw = (r.status || '').trim();
+      const rawStatus =
+        !raw || raw === 'รอตรวจสอบ' ? 'รับคำร้องแล้ว(รอสำรวจ)' : raw;
+      const meta = getStatusMeta(rawStatus);
+      const bucketKey = meta.label;
+      if (!areaMap[area].statuses[bucketKey]) {
+        areaMap[area].statuses[bucketKey] = {
+          statusKey: rawStatus,
+          count: 0,
+          meta,
+        };
+      }
+      areaMap[area].statuses[bucketKey].count += 1;
     });
 
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
+    return Object.entries(areaMap)
+      .sort((a, b) => b[1].count - a[1].count)
       .slice(0, 8)
-      .map(([area, count]) => ({ area, count }));
+      .map(([area, info]) => {
+        const segments = Object.values(info.statuses).sort((a, b) => {
+          const ia = preferredOrder.indexOf(a.meta.label);
+          const ib = preferredOrder.indexOf(b.meta.label);
+          if (ia === -1 && ib === -1) return b.count - a.count;
+          if (ia === -1) return 1;
+          if (ib === -1) return -1;
+          return ia - ib;
+        });
+        return {
+          area,
+          count: info.count,
+          segments,
+        };
+      });
   }, [records]);
 
   const maxAreaCount = Math.max(...areaBreakdown.map((a) => a.count), 1);
@@ -200,7 +247,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         )}
       </div>
 
-      {/* Subdistrict / Area Horizontal Bar Chart */}
+      {/* Subdistrict / Area Status-Colored Stacked Horizontal Bar Chart */}
       <div className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl p-4 sm:p-5 min-w-0 shadow-xs transition-colors">
         <div className="flex items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -225,20 +272,78 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
             {areaBreakdown.map((row) => {
               const widthPct = Math.max((row.count / maxAreaCount) * 100, 4);
               return (
-                <div key={row.area} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-700 dark:text-slate-300 font-medium truncate pr-2">
+                <div key={row.area} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs gap-2">
+                    <span className="text-slate-800 dark:text-slate-200 font-semibold truncate">
                       {row.area}
                     </span>
                     <span className="font-mono tabular-nums font-semibold text-slate-900 dark:text-slate-100 shrink-0">
                       {row.count} รายการ
                     </span>
                   </div>
-                  <div className="h-2.5 w-full bg-[#EAF1FA] dark:bg-[#132238] rounded-md overflow-hidden">
+
+                  {/* Stacked Status-Colored Bar */}
+                  <div className="h-3 w-full bg-[#EAF1FA] dark:bg-[#132238] rounded-md overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-[#0B4DA2] to-[#1396C7] dark:from-[#2B7CD3] dark:to-[#38A8E8] rounded-md transition-all duration-300"
+                      className="h-full flex rounded-md overflow-hidden divide-x divide-white/45 dark:divide-[#0F1B2E]/60 transition-all duration-300"
                       style={{ width: `${widthPct}%` }}
-                    />
+                    >
+                      {row.segments.map((seg) => {
+                        const segPct = (seg.count / row.count) * 100;
+                        const isDimmed =
+                          (hoveredStatus && hoveredStatus !== seg.statusKey) ||
+                          (activeStatusFilter && activeStatusFilter !== seg.statusKey);
+                        return (
+                          <div
+                            key={seg.meta.label}
+                            title={`${row.area} · ${seg.meta.label}: ${seg.count} รายการ`}
+                            onMouseEnter={() => setHoveredStatus(seg.statusKey)}
+                            onMouseLeave={() => setHoveredStatus(null)}
+                            onClick={() =>
+                              onFilterByStatus(
+                                activeStatusFilter === seg.statusKey ? '' : seg.statusKey
+                              )
+                            }
+                            className="h-full cursor-pointer transition-opacity duration-150"
+                            style={{
+                              width: `${segPct}%`,
+                              backgroundColor: seg.meta.color,
+                              opacity: isDimmed ? 0.3 : 1,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Status Breakdown Legend per Area */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+                    {row.segments.map((seg) => {
+                      const isActive = activeStatusFilter === seg.statusKey;
+                      return (
+                        <button
+                          key={seg.meta.label}
+                          type="button"
+                          onMouseEnter={() => setHoveredStatus(seg.statusKey)}
+                          onMouseLeave={() => setHoveredStatus(null)}
+                          onClick={() =>
+                            onFilterByStatus(isActive ? '' : seg.statusKey)
+                          }
+                          className={`inline-flex items-center gap-1.5 transition-colors hover:text-slate-900 dark:hover:text-white ${
+                            isActive ? 'font-semibold underline underline-offset-2' : ''
+                          }`}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-xs shrink-0"
+                            style={{ backgroundColor: seg.meta.color }}
+                          />
+                          <span>{seg.meta.label}</span>
+                          <span className="font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-100">
+                            {seg.count}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               );

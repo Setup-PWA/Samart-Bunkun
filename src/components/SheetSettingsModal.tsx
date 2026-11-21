@@ -123,7 +123,7 @@ function buildRowFromPayload_(headers, payload, existingRow) {
     if (['ตำบล-อำเภอ-จังหวัด', 'พื้นที่', 'location info'].indexOf(key) !== -1) return locationCombined;
     if (['เบอร์โทร', 'เบอร์ติดต่อ', 'โทรศัพท์', 'phone'].indexOf(key) !== -1) return payload.phone || '';
     if (['ราคา', 'ยอดชำระ', 'ยอดชำระเงิน', 'amount', 'price'].indexOf(key) !== -1) return payload.price !== undefined && payload.price !== null ? String(payload.price) : '0';
-    if (['สถานะ', 'สถานะการชำระเงิน', 'status'].indexOf(key) !== -1) return payload.status || 'รอตรวจสอบ';
+    if (['สถานะ', 'สถานะการชำระเงิน', 'status'].indexOf(key) !== -1) return payload.status || 'รับคำร้องแล้ว(รอสำรวจ)';
     if (['lat/long', 'พิกัด', 'location', 'coordinates'].indexOf(key) !== -1) return latLng;
     if (['latitude', 'lat'].indexOf(key) !== -1) return payload.latitude !== null && payload.latitude !== undefined ? String(payload.latitude) : '';
     if (['longitude', 'lng', 'long'].indexOf(key) !== -1) return payload.longitude !== null && payload.longitude !== undefined ? String(payload.longitude) : '';

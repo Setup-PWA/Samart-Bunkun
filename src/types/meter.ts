@@ -3,7 +3,7 @@ export type MeterStatus =
   | 'อยู่ระหว่างติดตั้ง'
   | 'ติดตั้งเสร็จสิ้น'
   | 'ไม่มีเส้นท่อ/ยกเลิก'
-  | 'รอตรวจสอบ'
+  | 'รับคำร้องแล้ว(รอสำรวจ)'
   | string;
 
 export interface MeterRequest {
@@ -244,9 +244,9 @@ export function getStatusMeta(status: string): {
       borderClass: 'border-slate-200 dark:border-slate-700',
     };
   }
-  if (s === 'รอตรวจสอบ' || s === '') {
+  if (s === 'รับคำร้องแล้ว(รอสำรวจ)' || s === 'รอตรวจสอบ' || s === '') {
     return {
-      label: s || 'รอตรวจสอบ',
+      label: 'รับคำร้องแล้ว(รอสำรวจ)',
       color: '#2271b3',
       textColor: 'text-[#2271B3] dark:text-[#5EA6E0]',
       dotClass: 'bg-[#2271B3]',

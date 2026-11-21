@@ -107,7 +107,7 @@ function toOverlayFields(payload: MeterFormPayload): OverlayRecordFields {
     locationSummary: buildSummaryFromPayload(payload),
     phone: payload.phone || '',
     price: Number(payload.price) || 0,
-    status: payload.status || 'รอตรวจสอบ',
+    status: payload.status || 'รับคำร้องแล้ว(รอสำรวจ)',
     latitude: payload.latitude ?? null,
     longitude: payload.longitude ?? null,
     note: payload.note || '',
