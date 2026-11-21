@@ -106,6 +106,16 @@ async function signInWithGisFallback(
         resolve(resp.access_token);
       },
       error_callback: (err) => {
+        const rawMsg = (err?.message || err?.type || '').toLowerCase();
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        if (rawMsg.includes('closed') || rawMsg.includes('popup_closed')) {
+          reject(
+            new Error(
+              `หน้าต่าง Google ถูกปิด หรือติด Error 400: origin_mismatch — กรุณาเพิ่มต้นทาง (Authorized JavaScript origins): ${origin} ใน Google Cloud Console หรือใช้ปุ่ม "ตั้งค่า Apps Script" แทน`
+            )
+          );
+          return;
+        }
         reject(new Error(err.message || 'หน้าต่างลงชื่อเข้าใช้ Google ถูกปิดหรือถูกบล็อก'));
       },
     });
@@ -132,6 +142,8 @@ async function signInWithGisFallback(
 
 function mapFirebaseAuthError(error: any): string {
   const code = error?.code || '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
   if (code === 'auth/popup-blocked') {
     return 'เบราว์เซอร์บล็อกหน้าต่าง Popup กรุณาอนุญาต Popup สำหรับเว็บไซต์นี้แล้วลองใหม่อีกครั้ง';
   }
@@ -139,7 +151,7 @@ function mapFirebaseAuthError(error: any): string {
     return 'ปิดหน้าต่างลงชื่อเข้าใช้ก่อนเสร็จสิ้น กรุณาลองใหม่อีกครั้ง';
   }
   if (code === 'auth/unauthorized-domain') {
-    return 'โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Auth กรุณาใช้ปุ่มเชื่อมต่อใหม่อีกครั้ง';
+    return `โดเมน ${host} (${origin}) ยังไม่ได้รับอนุญาตใน Firebase Auth / Google Cloud Console กรุณาเพิ่มใน Authorized domains และ Authorized JavaScript origins หรือใช้ "ตั้งค่า Apps Script" แทน`;
   }
   if (code === 'auth/network-request-failed') {
     return 'ไม่สามารถเชื่อมต่อเครือข่ายเพื่อยืนยันตัวตน Google ได้';
@@ -208,6 +220,9 @@ export const googleSignIn = async (
         cachedUserEmail = gis.email;
         return { email: cachedUserEmail, accessToken: cachedAccessToken };
       } catch (gisErr: any) {
+        if (code === 'auth/unauthorized-domain') {
+          throw new Error(mapFirebaseAuthError(firebaseErr));
+        }
         throw new Error(gisErr?.message || mapFirebaseAuthError(firebaseErr));
       }
     }

@@ -348,8 +348,26 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
       )}
 
       {googleAuthError && (
-        <div className="mx-5 mt-3 text-[11px] text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-lg px-3 py-2 leading-snug">
-          {googleAuthError}
+        <div className="mx-5 mt-3 text-[11px] text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-lg px-3 py-2 leading-snug space-y-1.5">
+          <p className="break-words">{googleAuthError}</p>
+          {typeof window !== 'undefined' &&
+            (googleAuthError.includes('origin_mismatch') ||
+              googleAuthError.includes('Authorized')) && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-rose-200/70 dark:border-rose-800/50">
+                <code className="px-1.5 py-0.5 rounded bg-white/80 dark:bg-[#0F1826] text-[10px] font-mono text-rose-900 dark:text-rose-200 break-all">
+                  {window.location.origin}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(window.location.origin).catch(() => {});
+                  }}
+                  className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-medium shrink-0"
+                >
+                  คัดลอก URL นี้
+                </button>
+              </div>
+            )}
         </div>
       )}
 
