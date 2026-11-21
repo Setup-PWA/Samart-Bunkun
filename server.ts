@@ -607,29 +607,60 @@ async function startServer() {
     res.json({ batches: batchesDb[key] });
   });
 
+  function validateAppsScriptWebAppUrl(rawUrl: unknown): { ok: true; url: string } | { ok: false; message: string } {
+    if (typeof rawUrl !== 'string' || !rawUrl.trim()) {
+      return { ok: false, message: 'กรุณาวางลิงก์ Google Apps Script Web App ก่อน' };
+    }
+    const clean = rawUrl.trim();
+    if (!clean.startsWith('https://script.google.com/')) {
+      return {
+        ok: false,
+        message: 'URL ต้องขึ้นต้นด้วย https://script.google.com/macros/s/.../exec',
+      };
+    }
+    try {
+      const parsed = new URL(clean);
+      if (parsed.pathname.endsWith('/dev')) {
+        return {
+          ok: false,
+          message: 'ลิงก์นี้เป็นลิงก์ทดสอบ (/dev) กรุณาใช้ลิงก์ที่ลงท้ายด้วย /exec จากเมนู Deploy > Web app',
+        };
+      }
+      if (!parsed.pathname.endsWith('/exec')) {
+        return {
+          ok: false,
+          message: 'ลิงก์ Apps Script ไม่สมบูรณ์ กรุณาคัดลอก URL มาครบทั้งเส้นที่ลงท้ายด้วย /exec',
+        };
+      }
+      return { ok: true, url: clean };
+    } catch {
+      return {
+        ok: false,
+        message: 'รูปแบบลิงก์ Apps Script ไม่ถูกต้อง',
+      };
+    }
+  }
+
   // Test Apps Script Web App connection (via GET or POST ping)
   app.post('/api/apps-script/test', async (req, res) => {
-    const { appsScriptUrl } = req.body || {};
-    if (
-      typeof appsScriptUrl !== 'string' ||
-      !appsScriptUrl.trim().startsWith('https://script.google.com/')
-    ) {
+    const check = validateAppsScriptWebAppUrl(req.body?.appsScriptUrl);
+    if (check.ok === false) {
       res.status(400).json({
         success: false,
-        message: 'URL ต้องขึ้นต้นด้วย https://script.google.com/macros/s/.../exec',
+        message: check.message,
       });
       return;
     }
 
     try {
-      const targetUrl = new URL(appsScriptUrl.trim());
+      const targetUrl = new URL(check.url);
       targetUrl.searchParams.set('action', 'ping');
       const upstream = await fetch(targetUrl.toString(), {
         method: 'GET',
         redirect: 'follow',
       });
       const text = await upstream.text();
-      if (upstream.url.includes('accounts.google.com') || isHtmlLike(text)) {
+      if (upstream.url.includes('accounts.google.com')) {
         res.status(403).json({
           success: false,
           message:
@@ -637,10 +668,26 @@ async function startServer() {
         });
         return;
       }
+      if (upstream.status === 404) {
+        res.status(404).json({
+          success: false,
+          message:
+            'ไม่พบ Apps Script Web App ที่ลิงก์นี้ (HTTP 404) กรุณาตรวจสอบว่า Deploy > Web app แล้ว และคัดลอก URL ครบทั้งเส้นถึง /exec',
+        });
+        return;
+      }
       if (!upstream.ok) {
         res.status(upstream.status).json({
           success: false,
           message: `Apps Script ตอบกลับ HTTP ${upstream.status}`,
+        });
+        return;
+      }
+      if (isHtmlLike(text)) {
+        res.status(403).json({
+          success: false,
+          message:
+            'Apps Script ตอบกลับเป็นหน้าเว็บ HTML แทน JSON (กรุณาตรวจสอบว่าวางโค้ด Code.gs ที่มี doGet และตั้งค่า Who has access เป็น "Anyone")',
         });
         return;
       }
@@ -660,20 +707,18 @@ async function startServer() {
 
   // Proxy for Google Apps Script Web App writes (strictly verifies JSON response, never silently fakes success on HTML login pages)
   app.post('/api/apps-script', async (req, res) => {
-    const { appsScriptUrl, payload } = req.body || {};
-    if (
-      typeof appsScriptUrl !== 'string' ||
-      !appsScriptUrl.trim().startsWith('https://script.google.com/')
-    ) {
+    const check = validateAppsScriptWebAppUrl(req.body?.appsScriptUrl);
+    const { payload } = req.body || {};
+    if (check.ok === false) {
       res.status(400).json({
         success: false,
-        message: 'URL ของ Apps Script ไม่ถูกต้อง',
+        message: check.message,
       });
       return;
     }
 
     try {
-      const upstream = await fetch(appsScriptUrl.trim(), {
+      const upstream = await fetch(check.url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload || {}),
@@ -681,7 +726,7 @@ async function startServer() {
       });
       const text = await upstream.text();
 
-      if (upstream.url.includes('accounts.google.com') || isHtmlLike(text)) {
+      if (upstream.url.includes('accounts.google.com')) {
         res.status(403).json({
           success: false,
           message:
@@ -690,10 +735,28 @@ async function startServer() {
         return;
       }
 
+      if (upstream.status === 404) {
+        res.status(404).json({
+          success: false,
+          message:
+            'ไม่พบลิงก์ Apps Script Web App นี้ (HTTP 404) กรุณาตรวจสอบว่า Deploy > Web app แล้ว และ URL ลงท้ายด้วย /exec',
+        });
+        return;
+      }
+
       if (!upstream.ok) {
         res.status(upstream.status).json({
           success: false,
           message: `Apps Script HTTP ${upstream.status}`,
+        });
+        return;
+      }
+
+      if (isHtmlLike(text)) {
+        res.status(403).json({
+          success: false,
+          message:
+            'Apps Script ตอบกลับเป็นหน้าเว็บ HTML แทน JSON (กรุณาตั้งค่า Who has access เป็น "Anyone" และ Deploy ใหม่)',
         });
         return;
       }

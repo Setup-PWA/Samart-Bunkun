@@ -235,22 +235,29 @@ export async function saveCompletedBatch(
       // ignore and continue saving locally/server
     }
   } else if (input.appsScriptUrl?.trim().startsWith('https://script.google.com/')) {
+    const cleanUrl = input.appsScriptUrl.trim();
+    const payload = { action: 'saveCompletedBatch', batch: newBatch };
     try {
       const res = await fetch('/api/apps-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          appsScriptUrl: input.appsScriptUrl.trim(),
-          payload: {
-            action: 'saveCompletedBatch',
-            batch: newBatch,
-          },
-        }),
+        body: JSON.stringify({ appsScriptUrl: cleanUrl, payload }),
       });
       if (res.ok) {
         const parsed = await res.json();
         if (parsed?.success !== false) {
           syncedToSheetTab = true;
+        }
+      } else if (res.status === 404 || res.status === 405) {
+        const directRes = await fetch(cleanUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload),
+          redirect: 'follow',
+        });
+        if (directRes.ok) {
+          const parsed = await directRes.json().catch(() => null);
+          if (parsed?.success !== false) syncedToSheetTab = true;
         }
       }
     } catch {
@@ -305,22 +312,29 @@ export async function updateCompletedBatch(
       // ignore
     }
   } else if (appsScriptUrl?.trim().startsWith('https://script.google.com/')) {
+    const cleanUrl = appsScriptUrl.trim();
+    const payload = { action: 'saveCompletedBatch', batch: updatedBatch };
     try {
       const res = await fetch('/api/apps-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          appsScriptUrl: appsScriptUrl.trim(),
-          payload: {
-            action: 'saveCompletedBatch',
-            batch: updatedBatch,
-          },
-        }),
+        body: JSON.stringify({ appsScriptUrl: cleanUrl, payload }),
       });
       if (res.ok) {
         const parsed = await res.json();
         if (parsed?.success !== false) {
           syncedToSheetTab = true;
+        }
+      } else if (res.status === 404 || res.status === 405) {
+        const directRes = await fetch(cleanUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload),
+          redirect: 'follow',
+        });
+        if (directRes.ok) {
+          const parsed = await directRes.json().catch(() => null);
+          if (parsed?.success !== false) syncedToSheetTab = true;
         }
       }
     } catch {

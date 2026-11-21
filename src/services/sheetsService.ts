@@ -668,32 +668,134 @@ export async function saveServerConfig(config: SheetConfig): Promise<void> {
   }
 }
 
+function validateAppsScriptClientUrl(
+  rawUrl: string
+): { ok: true; url: string } | { ok: false; message: string } {
+  const clean = rawUrl.trim();
+  if (!clean) {
+    return { ok: false, message: 'กรุณาวางลิงก์ Google Apps Script Web App ก่อนทดสอบ' };
+  }
+  if (!clean.startsWith('https://script.google.com/')) {
+    return {
+      ok: false,
+      message: 'URL ต้องขึ้นต้นด้วย https://script.google.com/macros/s/.../exec',
+    };
+  }
+  try {
+    const parsed = new URL(clean);
+    if (parsed.pathname.endsWith('/dev')) {
+      return {
+        ok: false,
+        message:
+          'ลิงก์นี้เป็นลิงก์ทดสอบ (/dev) กรุณาใช้ลิงก์ที่ลงท้ายด้วย /exec จากเมนู Deploy > Web app',
+      };
+    }
+    if (!parsed.pathname.endsWith('/exec')) {
+      return {
+        ok: false,
+        message:
+          'ลิงก์ Apps Script ไม่สมบูรณ์ กรุณาคัดลอก URL มาครบทั้งเส้นที่ลงท้ายด้วย /exec',
+      };
+    }
+    return { ok: true, url: clean };
+  } catch {
+    return { ok: false, message: 'รูปแบบลิงก์ Apps Script ไม่ถูกต้อง' };
+  }
+}
+
+async function testAppsScriptDirect(
+  cleanUrl: string
+): Promise<{ success: boolean; message: string; sheetName?: string }> {
+  const pingUrl = new URL(cleanUrl);
+  pingUrl.searchParams.set('action', 'ping');
+  try {
+    const directRes = await fetch(pingUrl.toString(), {
+      method: 'GET',
+      redirect: 'follow',
+    });
+    const text = await directRes.text();
+    if (directRes.status === 404) {
+      return {
+        success: false,
+        message:
+          'ไม่พบ Apps Script Web App ที่ลิงก์นี้ (HTTP 404) กรุณาตรวจสอบว่า Deploy > Web app แล้ว และคัดลอก URL ครบทั้งเส้นถึง /exec',
+      };
+    }
+    if (!directRes.ok) {
+      return {
+        success: false,
+        message: `Apps Script ตอบกลับ HTTP ${directRes.status}`,
+      };
+    }
+    const lower = text.trim().toLowerCase();
+    if (lower.startsWith('<!doctype') || lower.startsWith('<html')) {
+      return {
+        success: false,
+        message:
+          'Apps Script ตอบกลับเป็นหน้าเว็บแทน JSON กรุณาตรวจสอบว่าวางโค้ด Code.gs ล่าสุดและตั้งค่า Who has access เป็น "Anyone"',
+      };
+    }
+    const json = JSON.parse(text);
+    if (json && json.success === false) {
+      return {
+        success: false,
+        message: json.message || 'Apps Script ปฏิเสธการเชื่อมต่อ',
+      };
+    }
+    return {
+      success: true,
+      message: json?.sheetName
+        ? `เชื่อมต่อสำเร็จ! พบชีท "${json.sheetName}" พร้อมเขียนข้อมูลอัตโนมัติ`
+        : json?.message || 'เชื่อมต่อ Apps Script สำเร็จ พร้อมเขียนข้อมูลเข้าชีทอัตโนมัติ',
+      sheetName: json?.sheetName,
+    };
+  } catch {
+    return {
+      success: false,
+      message:
+        'ไม่สามารถเชื่อมต่อ Apps Script Web App ได้ (กรุณาตรวจสอบว่าตั้ง Who has access เป็น "Anyone (ทุกคน)" และคัดลอก URL /exec ถูกต้อง)',
+    };
+  }
+}
+
 export async function testAppsScriptConnection(
   appsScriptUrl: string
 ): Promise<{ success: boolean; message: string; sheetName?: string }> {
-  const cleanUrl = appsScriptUrl.trim();
-  if (!cleanUrl) {
-    return { success: false, message: 'กรุณาวางลิงก์ Google Apps Script Web App ก่อนทดสอบ' };
+  const check = validateAppsScriptClientUrl(appsScriptUrl);
+  if (check.ok === false) {
+    return { success: false, message: check.message };
   }
-  const res = await fetch('/api/apps-script/test', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ appsScriptUrl: cleanUrl }),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || json.success === false) {
+  const cleanUrl = check.url;
+
+  try {
+    const res = await fetch('/api/apps-script/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appsScriptUrl: cleanUrl }),
+    });
+    const json = await res.json().catch(() => null);
+
+    // If /api/apps-script/test route is missing on static/shared hosting (404/405 with non-JSON body), test directly via browser CORS
+    if ((res.status === 404 || res.status === 405) && !json?.message) {
+      return await testAppsScriptDirect(cleanUrl);
+    }
+
+    if (!res.ok || json?.success === false) {
+      return {
+        success: false,
+        message: json?.message || `ทดสอบการเชื่อมต่อไม่สำเร็จ (HTTP ${res.status})`,
+      };
+    }
     return {
-      success: false,
-      message: json.message || `ทดสอบการเชื่อมต่อไม่สำเร็จ (HTTP ${res.status})`,
+      success: true,
+      message: json?.sheetName
+        ? `เชื่อมต่อสำเร็จ! พบชีท "${json.sheetName}" พร้อมเขียนข้อมูลอัตโนมัติ`
+        : json?.message || 'เชื่อมต่อ Apps Script สำเร็จ พร้อมเขียนข้อมูลเข้าชีทอัตโนมัติ',
+      sheetName: json?.sheetName,
     };
+  } catch {
+    return await testAppsScriptDirect(cleanUrl);
   }
-  return {
-    success: true,
-    message: json.sheetName
-      ? `เชื่อมต่อสำเร็จ! พบชีท "${json.sheetName}" พร้อมเขียนข้อมูลอัตโนมัติ`
-      : json.message || 'เชื่อมต่อ Apps Script สำเร็จ พร้อมเขียนข้อมูลเข้าชีทอัตโนมัติ',
-    sheetName: json.sheetName,
-  };
 }
 
 async function callServerServiceWrite(body: Record<string, unknown>): Promise<void> {
@@ -705,6 +807,35 @@ async function callServerServiceWrite(body: Record<string, unknown>): Promise<vo
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.success === false) {
     throw new Error(json.message || `Server Service Account HTTP ${res.status}`);
+  }
+}
+
+async function callAppsScriptDirectPost(
+  cleanUrl: string,
+  body: Record<string, unknown>
+): Promise<void> {
+  const res = await fetch(cleanUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+    redirect: 'follow',
+  });
+  const text = await res.text();
+  if (res.status === 404) {
+    throw new Error('ไม่พบลิงก์ Apps Script Web App นี้ (HTTP 404) กรุณาตรวจสอบ URL /exec');
+  }
+  if (!res.ok) {
+    throw new Error(`Apps Script ตอบกลับข้อผิดพลาด HTTP ${res.status}`);
+  }
+  const lower = text.trim().toLowerCase();
+  if (lower.startsWith('<!doctype') || lower.startsWith('<html')) {
+    throw new Error(
+      'Apps Script ปฏิเสธการเข้าถึง (กรุณาตั้งค่า Who has access เป็น "Anyone" และ Deploy ใหม่)'
+    );
+  }
+  const json = JSON.parse(text);
+  if (json && json.success === false) {
+    throw new Error(json.message || 'Apps Script ปฏิเสธการบันทึกข้อมูล');
   }
 }
 
@@ -725,32 +856,39 @@ async function callAppsScriptWrite(
   }
 
   if (typeof window !== 'undefined') {
-    const proxyRes = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appsScriptUrl: cleanUrl, payload: body }),
-    });
-    const json = await proxyRes.json().catch(() => null);
-    if (!proxyRes.ok || (json && json.success === false)) {
-      throw new Error(
-        json?.message || `Apps Script ตอบกลับข้อผิดพลาด (HTTP ${proxyRes.status})`
-      );
+    let shouldFallbackDirect = false;
+    try {
+      const proxyRes = await fetch('/api/apps-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appsScriptUrl: cleanUrl, payload: body }),
+      });
+      const json = await proxyRes.json().catch(() => null);
+      if ((proxyRes.status === 404 || proxyRes.status === 405) && !json?.message) {
+        shouldFallbackDirect = true;
+      } else {
+        if (!proxyRes.ok || (json && json.success === false)) {
+          throw new Error(
+            json?.message || `Apps Script ตอบกลับข้อผิดพลาด (HTTP ${proxyRes.status})`
+          );
+        }
+        return;
+      }
+    } catch (err) {
+      if (err instanceof TypeError) {
+        shouldFallbackDirect = true;
+      } else {
+        throw err;
+      }
     }
-    return;
+
+    if (shouldFallbackDirect) {
+      await callAppsScriptDirectPost(cleanUrl, body);
+      return;
+    }
   }
 
-  const res = await fetch(cleanUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    throw new Error(`Apps Script ตอบกลับข้อผิดพลาด HTTP ${res.status}`);
-  }
-  const json = await res.json().catch(() => null);
-  if (json && json.success === false) {
-    throw new Error(json.message || 'Apps Script ปฏิเสธการบันทึกข้อมูล');
-  }
+  await callAppsScriptDirectPost(cleanUrl, body);
 }
 
 export async function appendSheetRecord(

@@ -306,20 +306,53 @@ async function uploadViaAppsScript(
     };
   }
 
-  const proxyRes = await fetch('/api/apps-script', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      appsScriptUrl: appsScriptUrl.trim(),
-      payload: actionBody,
-    }),
-  });
-  const json = await proxyRes.json().catch(() => null);
-  if (!proxyRes.ok || (json && json.success === false)) {
-    throw new Error(
-      json?.message || `Apps Script ไม่สามารถอัปโหลดรูปได้ (HTTP ${proxyRes.status})`
-    );
+  const cleanUrl = appsScriptUrl.trim();
+  let json: any = null;
+  let shouldFallbackDirect = false;
+  try {
+    const proxyRes = await fetch('/api/apps-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appsScriptUrl: cleanUrl,
+        payload: actionBody,
+      }),
+    });
+    json = await proxyRes.json().catch(() => null);
+    if ((proxyRes.status === 404 || proxyRes.status === 405) && !json?.message) {
+      shouldFallbackDirect = true;
+    } else if (!proxyRes.ok || (json && json.success === false)) {
+      throw new Error(
+        json?.message || `Apps Script ไม่สามารถอัปโหลดรูปได้ (HTTP ${proxyRes.status})`
+      );
+    }
+  } catch (err) {
+    if (err instanceof TypeError) {
+      shouldFallbackDirect = true;
+    } else {
+      throw err;
+    }
   }
+
+  if (shouldFallbackDirect) {
+    const directRes = await fetch(cleanUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(actionBody),
+      redirect: 'follow',
+    });
+    const text = await directRes.text();
+    if (!directRes.ok) {
+      throw new Error(`Apps Script ไม่สามารถอัปโหลดรูปได้ (HTTP ${directRes.status})`);
+    }
+    json = JSON.parse(text);
+    if (json && json.success === false) {
+      throw new Error(
+        json?.message || 'Apps Script ไม่สามารถอัปโหลดรูปเข้า Google Drive ได้'
+      );
+    }
+  }
+
   return {
     fileId: String(json?.fileId || ''),
     fileName: String(json?.fileName || fileName),
