@@ -112,6 +112,16 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
   const [photoError, setPhotoError] = useState('');
   const [isPreparingPhoto, setIsPreparingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const resetPhotoInputs = () => {
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
+  };
 
   const resetFields = () => {
     setRqNumber('');
@@ -130,9 +140,7 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
     setPendingPhoto(null);
     setExistingPhotoUrl('');
     setPhotoError('');
-    if (photoInputRef.current) {
-      photoInputRef.current.value = '';
-    }
+    resetPhotoInputs();
   };
 
   // Load editing record into form
@@ -154,9 +162,7 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
       setExistingPhotoUrl(editingRecord.housePhotoUrl || '');
       setPendingPhoto(null);
       setPhotoError('');
-      if (photoInputRef.current) {
-        photoInputRef.current.value = '';
-      }
+      resetPhotoInputs();
     } else {
       resetFields();
     }
@@ -195,9 +201,7 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
     setPendingPhoto(null);
     setExistingPhotoUrl('');
     setPhotoError('');
-    if (photoInputRef.current) {
-      photoInputRef.current.value = '';
-    }
+    resetPhotoInputs();
   };
 
   const handlePresetChange = (idxStr: string) => {
@@ -575,6 +579,14 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
           </div>
 
           <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoFileChange}
+            className="hidden"
+          />
+          <input
             ref={photoInputRef}
             type="file"
             accept="image/*"
@@ -601,10 +613,20 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
                     <button
                       type="button"
                       disabled={isPreparingPhoto || isSubmitting}
-                      onClick={() => photoInputRef.current?.click()}
-                      className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] hover:border-[#2271B3] text-[#2271B3] dark:text-[#5EA6E0] transition-colors"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] hover:border-[#2271B3] text-[#2271B3] dark:text-[#5EA6E0] inline-flex items-center gap-1 transition-colors"
                     >
-                      เปลี่ยนรูป
+                      <Camera className="w-3 h-3" />
+                      <span>ถ่ายรูปใหม่</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isPreparingPhoto || isSubmitting}
+                      onClick={() => photoInputRef.current?.click()}
+                      className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] hover:border-[#2271B3] text-[#2271B3] dark:text-[#5EA6E0] inline-flex items-center gap-1 transition-colors"
+                    >
+                      <ImageIcon className="w-3 h-3" />
+                      <span>เลือกไฟล์ใหม่</span>
                     </button>
                     <button
                       type="button"
@@ -633,53 +655,78 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
               )}
             </div>
           ) : existingPhotoUrl ? (
-            <div className="rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/70 dark:bg-emerald-950/25 p-2.5 flex items-center justify-between gap-2">
-              <a
-                href={existingPhotoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-[#2271B3] dark:text-[#5EA6E0] hover:underline inline-flex items-center gap-1.5 min-w-0 truncate"
-              >
-                <ImageIcon className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span className="truncate">ดูรูปหน้าบ้านที่บันทึกไว้</span>
-                <ExternalLink className="w-3 h-3 shrink-0" />
-              </a>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  disabled={isPreparingPhoto || isSubmitting}
-                  onClick={() => photoInputRef.current?.click()}
-                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] text-[#2271B3] dark:text-[#5EA6E0]"
+            <div className="rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/70 dark:bg-emerald-950/25 p-2.5 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <a
+                  href={existingPhotoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-[#2271B3] dark:text-[#5EA6E0] hover:underline inline-flex items-center gap-1.5 min-w-0 truncate"
                 >
-                  เปลี่ยนรูปใหม่
-                </button>
+                  <ImageIcon className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span className="truncate">ดูรูปหน้าบ้านที่บันทึกไว้</span>
+                  <ExternalLink className="w-3 h-3 shrink-0" />
+                </a>
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleClearPhoto}
-                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] text-rose-600 dark:text-rose-400"
+                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] text-rose-600 dark:text-rose-400 shrink-0"
                 >
                   ลบรูป
                 </button>
               </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  disabled={isPreparingPhoto || isSubmitting}
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] hover:border-[#2271B3] text-[#2271B3] dark:text-[#5EA6E0] inline-flex items-center justify-center gap-1 transition-colors"
+                >
+                  <Camera className="w-3 h-3" />
+                  <span>ถ่ายรูปใหม่</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isPreparingPhoto || isSubmitting}
+                  onClick={() => photoInputRef.current?.click()}
+                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] hover:border-[#2271B3] text-[#2271B3] dark:text-[#5EA6E0] inline-flex items-center justify-center gap-1 transition-colors"
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  <span>เลือกไฟล์ใหม่</span>
+                </button>
+              </div>
             </div>
           ) : (
-            <button
-              type="button"
-              disabled={isPreparingPhoto || isSubmitting}
-              onClick={() => photoInputRef.current?.click()}
-              className="w-full py-2.5 px-3 rounded-lg border border-dashed border-slate-300 dark:border-[#2D425C] bg-slate-50 dark:bg-[#0F1826] hover:bg-[#EDF5FC]/70 dark:hover:bg-[#162336] hover:border-[#2271B3] dark:hover:border-[#5EA6E0] text-slate-700 dark:text-slate-200 transition-colors flex items-center justify-center gap-2 text-xs"
-            >
-              <Camera className="w-4 h-4 text-[#2271B3] dark:text-[#5EA6E0] shrink-0" />
-              <div className="text-left">
-                <span className="font-medium block leading-tight">
-                  {isPreparingPhoto ? 'กำลังเตรียมรูปภาพ...' : 'เลือกรูป / ถ่ายรูปหน้าบ้าน (1 รูป)'}
-                </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
-                  บันทึกลง Google Drive อัตโนมัติ
-                </span>
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  disabled={isPreparingPhoto || isSubmitting}
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="py-2.5 px-2.5 rounded-lg border border-dashed border-slate-300 dark:border-[#2D425C] bg-slate-50 dark:bg-[#0F1826] hover:bg-[#EDF5FC]/70 dark:hover:bg-[#162336] hover:border-[#2271B3] dark:hover:border-[#5EA6E0] text-slate-700 dark:text-slate-200 transition-colors flex items-center justify-center gap-1.5 text-xs"
+                >
+                  <Camera className="w-4 h-4 text-[#2271B3] dark:text-[#5EA6E0] shrink-0" />
+                  <span className="font-medium truncate">
+                    {isPreparingPhoto ? 'กำลังเตรียมรูป...' : 'ถ่ายรูป (มือถือ)'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isPreparingPhoto || isSubmitting}
+                  onClick={() => photoInputRef.current?.click()}
+                  className="py-2.5 px-2.5 rounded-lg border border-dashed border-slate-300 dark:border-[#2D425C] bg-slate-50 dark:bg-[#0F1826] hover:bg-[#EDF5FC]/70 dark:hover:bg-[#162336] hover:border-[#2271B3] dark:hover:border-[#5EA6E0] text-slate-700 dark:text-slate-200 transition-colors flex items-center justify-center gap-1.5 text-xs"
+                >
+                  <UploadCloud className="w-4 h-4 text-[#2271B3] dark:text-[#5EA6E0] shrink-0" />
+                  <span className="font-medium truncate">
+                    {isPreparingPhoto ? 'กำลังเตรียมรูป...' : 'เลือกจากไฟล์ภาพ'}
+                  </span>
+                </button>
               </div>
-            </button>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
+                บันทึกลง Google Drive อัตโนมัติ (รองรับทั้งกล้องมือถือและไฟล์ภาพ)
+              </p>
+            </div>
           )}
 
           {photoError && (
