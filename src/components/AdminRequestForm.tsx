@@ -1,0 +1,720 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  AlertTriangle,
+  Camera,
+  CheckCircle2,
+  Crosshair,
+  ExternalLink,
+  FilePlus2,
+  Image as ImageIcon,
+  LocateFixed,
+  PenLine,
+  RotateCcw,
+  Save,
+  Settings,
+  Trash2,
+  UploadCloud,
+} from 'lucide-react';
+import { MeterFormPayload, MeterRequest, formatLatLngString, parseLatLngPair } from '../types/meter';
+import {
+  HousePhotoPayload,
+  buildDriveFolderUrl,
+  prepareHousePhotoFile,
+} from '../services/driveService';
+
+interface AdminRequestFormProps {
+  editingRecord: MeterRequest | null;
+  pickedCoords: { lat: number; lng: number } | null;
+  isGoogleConnected: boolean;
+  isGoogleSigningIn: boolean;
+  hasAppsScript: boolean;
+  serviceAccountConfigured: boolean;
+  googleUserEmail: string | null;
+  googleAuthError: string;
+  isSubmitting: boolean;
+  pendingSyncCount: number;
+  isFlushingPending: boolean;
+  driveFolderId?: string;
+  resetTrigger?: number;
+  onConnectGoogle: () => void;
+  onConnectGoogleForDrive?: () => void;
+  onOpenSheetSettings: () => void;
+  onFlushPending: () => void;
+  onCaptureCurrentGps: () => void;
+  onCoordsManualChange: (lat: number | null, lng: number | null) => void;
+  onCancelEdit: () => void;
+  onSubmit: (
+    payload: MeterFormPayload,
+    editingRowIndex: number | null,
+    photoFile: HousePhotoPayload | null
+  ) => void;
+}
+
+const AREA_PRESETS = [
+  { label: 'ต.สลกบาตร · อ.ขาณุวรลักษบุรี · จ.กำแพงเพชร', subdistrict: 'ต.สลกบาตร', district: 'อ.ขาณุวรลักษบุรี', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.แสนตอ · อ.ขาณุวรลักษบุรี · จ.กำแพงเพชร', subdistrict: 'ต.แสนตอ', district: 'อ.ขาณุวรลักษบุรี', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.ป่าพุทรา · อ.ขาณุวรลักษบุรี · จ.กำแพงเพชร', subdistrict: 'ต.ป่าพุทรา', district: 'อ.ขาณุวรลักษบุรี', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.ยางสูง · อ.ขาณุวรลักษบุรี · จ.กำแพงเพชร', subdistrict: 'ต.ยางสูง', district: 'อ.ขาณุวรลักษบุรี', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.คลองขลุง · อ.คลองขลุง · จ.กำแพงเพชร', subdistrict: 'ต.คลองขลุง', district: 'อ.คลองขลุง', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.ท่าพุทรา · อ.คลองขลุง · จ.กำแพงเพชร', subdistrict: 'ต.ท่าพุทรา', district: 'อ.คลองขลุง', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.ท่ามะเขือ · อ.คลองขลุง · จ.กำแพงเพชร', subdistrict: 'ต.ท่ามะเขือ', district: 'อ.คลองขลุง', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.ทุ่งทราย · อ.ทรายทองวัฒนา · จ.กำแพงเพชร', subdistrict: 'ต.ทุ่งทราย', district: 'อ.ทรายทองวัฒนา', province: 'จ.กำแพงเพชร' },
+  { label: 'ต.บางแก้ว · อ.บรรพตพิสัย · จ.นครสวรรค์', subdistrict: 'ต.บางแก้ว', district: 'อ.บรรพตพิสัย', province: 'จ.นครสวรรค์' },
+  { label: 'ต.บ้านแดน · อ.บรรพตพิสัย · จ.นครสวรรค์', subdistrict: 'ต.บ้านแดน', district: 'อ.บรรพตพิสัย', province: 'จ.นครสวรรค์' },
+];
+
+const todayIso = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
+  editingRecord,
+  pickedCoords,
+  isGoogleConnected,
+  isGoogleSigningIn,
+  hasAppsScript,
+  serviceAccountConfigured,
+  googleUserEmail,
+  googleAuthError,
+  isSubmitting,
+  pendingSyncCount,
+  isFlushingPending,
+  driveFolderId,
+  resetTrigger,
+  onConnectGoogle,
+  onConnectGoogleForDrive,
+  onOpenSheetSettings,
+  onFlushPending,
+  onCaptureCurrentGps,
+  onCoordsManualChange,
+  onCancelEdit,
+  onSubmit,
+}) => {
+  const [rqNumber, setRqNumber] = useState('');
+  const [requestDate, setRequestDate] = useState(todayIso());
+  const [fullName, setFullName] = useState('');
+  const [houseNo, setHouseNo] = useState('');
+  const [moo, setMoo] = useState('');
+  const [subdistrict, setSubdistrict] = useState('');
+  const [district, setDistrict] = useState('');
+  const [province, setProvince] = useState('');
+  const [phone, setPhone] = useState('');
+  const [price, setPrice] = useState('0');
+  const [status, setStatus] = useState('รอตรวจสอบ');
+  const [latLngText, setLatLngText] = useState('');
+  const [note, setNote] = useState('');
+  const [pendingPhoto, setPendingPhoto] = useState<HousePhotoPayload | null>(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState('');
+  const [photoError, setPhotoError] = useState('');
+  const [isPreparingPhoto, setIsPreparingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const resetFields = () => {
+    setRqNumber('');
+    setRequestDate(todayIso());
+    setFullName('');
+    setHouseNo('');
+    setMoo('');
+    setSubdistrict('');
+    setDistrict('');
+    setProvince('');
+    setPhone('');
+    setPrice('0');
+    setStatus('รอตรวจสอบ');
+    setLatLngText('');
+    setNote('');
+    setPendingPhoto(null);
+    setExistingPhotoUrl('');
+    setPhotoError('');
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
+  };
+
+  // Load editing record into form
+  useEffect(() => {
+    if (editingRecord) {
+      setRqNumber(editingRecord.rqNumber || '');
+      setRequestDate(editingRecord.requestDate || todayIso());
+      setFullName(editingRecord.fullName || '');
+      setHouseNo(editingRecord.houseNo || '');
+      setMoo(editingRecord.moo || '');
+      setSubdistrict(editingRecord.subdistrict || '');
+      setDistrict(editingRecord.district || '');
+      setProvince(editingRecord.province || '');
+      setPhone(editingRecord.phone || '');
+      setPrice(String(editingRecord.price ?? 0));
+      setStatus(editingRecord.status || 'รอตรวจสอบ');
+      setLatLngText(formatLatLngString(editingRecord.latitude, editingRecord.longitude));
+      setNote(editingRecord.note || '');
+      setExistingPhotoUrl(editingRecord.housePhotoUrl || '');
+      setPendingPhoto(null);
+      setPhotoError('');
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    } else {
+      resetFields();
+    }
+  }, [editingRecord]);
+
+  useEffect(() => {
+    if (resetTrigger && resetTrigger > 0) {
+      resetFields();
+    }
+  }, [resetTrigger]);
+
+  // Sync map-picked coordinates into lat/long field
+  useEffect(() => {
+    if (pickedCoords) {
+      setLatLngText(formatLatLngString(pickedCoords.lat, pickedCoords.lng));
+    }
+  }, [pickedCoords]);
+
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPhotoError('');
+    setIsPreparingPhoto(true);
+    try {
+      const prepared = await prepareHousePhotoFile(file);
+      setPendingPhoto(prepared);
+    } catch (err: any) {
+      setPhotoError(err?.message || 'ไม่สามารถโหลดรูปภาพที่เลือกได้');
+    } finally {
+      setIsPreparingPhoto(false);
+    }
+  };
+
+  const handleClearPhoto = () => {
+    setPendingPhoto(null);
+    setExistingPhotoUrl('');
+    setPhotoError('');
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
+  };
+
+  const handlePresetChange = (idxStr: string) => {
+    const idx = Number.parseInt(idxStr, 10);
+    if (Number.isNaN(idx) || !AREA_PRESETS[idx]) return;
+    const preset = AREA_PRESETS[idx];
+    setSubdistrict(preset.subdistrict);
+    setDistrict(preset.district);
+    setProvince(preset.province);
+  };
+
+  const handleLatLngBlur = () => {
+    const { lat, lng } = parseLatLngPair(latLngText);
+    onCoordsManualChange(lat, lng);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const { lat, lng } = parseLatLngPair(latLngText);
+    onSubmit(
+      {
+        rqNumber: rqNumber.trim(),
+        requestDate,
+        fullName: fullName.trim(),
+        houseNo: houseNo.trim(),
+        moo: moo.trim(),
+        subdistrict: subdistrict.trim(),
+        district: district.trim(),
+        province: province.trim(),
+        phone: phone.trim(),
+        price: Number.parseFloat(price) || 0,
+        status,
+        latitude: lat,
+        longitude: lng,
+        note: note.trim(),
+        housePhotoUrl: existingPhotoUrl.trim(),
+      },
+      editingRecord ? editingRecord.rowIndex : null,
+      pendingPhoto
+    );
+  };
+
+  const hasDirectSheetWrite =
+    hasAppsScript || serviceAccountConfigured || isGoogleConnected;
+
+  const inputCls =
+    'w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-1.5 px-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors';
+
+  return (
+    <aside className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden flex flex-col transition-colors">
+      <div className="px-5 py-3.5 border-b border-[#1A5A8F] bg-[#2271B3] dark:bg-[#1A5A8F] text-white flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {editingRecord ? (
+            <PenLine className="w-4 h-4 text-amber-300 shrink-0" />
+          ) : (
+            <FilePlus2 className="w-4 h-4 text-white/90 shrink-0" />
+          )}
+          <h2 className="font-semibold text-sm truncate">
+            {editingRecord
+              ? editingRecord.rowIndex > 0
+                ? `แก้ไขคำขอ (แถวที่ ${editingRecord.rowIndex})`
+                : 'แก้ไขคำขอ'
+              : 'บันทึกคำขอใหม่'}
+          </h2>
+        </div>
+
+        {editingRecord && (
+          <button
+            type="button"
+            onClick={() => {
+              resetFields();
+              onCancelEdit();
+            }}
+            className="text-xs px-2.5 py-1 rounded-md bg-white/15 hover:bg-white/25 text-white transition-colors inline-flex items-center gap-1 shrink-0"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>ยกเลิกแก้ไข</span>
+          </button>
+        )}
+      </div>
+
+      {/* Transparent Sheet Write Sync Status */}
+      {hasDirectSheetWrite ? (
+        <div className="px-4 py-2.5 bg-emerald-50 dark:bg-emerald-950/35 border-b border-emerald-200 dark:border-emerald-800/50 space-y-2 text-xs text-emerald-900 dark:text-emerald-200">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span className="truncate font-medium">
+              {hasAppsScript
+                ? 'เชื่อมต่อ Apps Script แล้ว · บันทึกเข้า Google Sheet อัตโนมัติ'
+                : serviceAccountConfigured
+                ? 'เชื่อมต่อ Service Account แล้ว · บันทึกเข้า Google Sheet อัตโนมัติ'
+                : `เชื่อมต่อ Google Sheets API (${googleUserEmail || 'Google Account'})`}
+            </span>
+          </div>
+          {pendingSyncCount > 0 && (
+            <button
+              type="button"
+              disabled={isFlushingPending}
+              onClick={onFlushPending}
+              className="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg text-[11px] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>
+                {isFlushingPending
+                  ? 'กำลังส่งข้อมูลเข้าชีท...'
+                  : `ส่งรายการที่แก้ไขค้างไว้ (${pendingSyncCount}) เข้า Google Sheet`}
+              </span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="px-4 py-3 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/50 space-y-2.5 text-xs text-amber-900 dark:text-amber-200">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="leading-snug space-y-0.5">
+              <p className="font-semibold">
+                บันทึกบนระบบเว็บแล้ว · ยังไม่มีสิทธิ์เขียนลงไฟล์ Google Sheet โดยตรง
+              </p>
+              <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                ยืนยันสิทธิ์เจ้าของชีทครั้งเดียวเพื่อเขียนเข้า Google Sheet อัตโนมัติ (หรือวางลิงก์ Apps Script)
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={isGoogleSigningIn}
+              onClick={onConnectGoogle}
+              className="py-1.5 px-3 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:opacity-60 text-white rounded-lg text-[11px] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{isGoogleSigningIn ? 'กำลังเชื่อมต่อ...' : 'เชื่อมสิทธิ์ Google คลิกเดียว'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenSheetSettings}
+              className="py-1.5 px-3 bg-white dark:bg-[#0F1826] hover:bg-amber-100 dark:hover:bg-[#162336] border border-amber-300 dark:border-amber-700/60 text-amber-900 dark:text-amber-200 rounded-lg text-[11px] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>ตั้งค่า Apps Script</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {googleAuthError && (
+        <div className="mx-5 mt-3 text-[11px] text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-lg px-3 py-2 leading-snug">
+          {googleAuthError}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="p-5 space-y-3.5 overflow-y-auto">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              เลขที่ RQ
+            </label>
+            <input
+              type="text"
+              value={rqNumber}
+              onChange={(e) => setRqNumber(e.target.value)}
+              placeholder="เช่น RQ-2026-001"
+              className={`${inputCls} text-xs font-mono`}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              วันที่ยื่นคำร้อง
+            </label>
+            <input
+              type="date"
+              required
+              value={requestDate}
+              onChange={(e) => setRequestDate(e.target.value)}
+              className={`${inputCls} text-xs`}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            ชื่อ - สกุล ผู้ยื่นคำขอ *
+          </label>
+          <input
+            type="text"
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="ระบุชื่อ-นามสกุล"
+            className={`${inputCls} text-sm`}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              หมู่ที่ *
+            </label>
+            <select
+              required
+              value={moo}
+              onChange={(e) => setMoo(e.target.value)}
+              className={`${inputCls} text-sm`}
+            >
+              <option value="">เลือกหมู่ที่</option>
+              {Array.from({ length: 25 }, (_, i) => String(i + 1)).map((m) => (
+                <option key={m} value={m}>
+                  หมู่ที่ {m}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              บ้านเลขที่ (ถ้ามี)
+            </label>
+            <input
+              type="text"
+              value={houseNo}
+              onChange={(e) => setHouseNo(e.target.value)}
+              placeholder="เช่น 123/4"
+              className={`${inputCls} text-sm`}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            เลือกพื้นที่ด่วน (หรือกรอกด้านล่าง)
+          </label>
+          <select
+            defaultValue=""
+            onChange={(e) => handlePresetChange(e.target.value)}
+            className={`${inputCls} text-xs`}
+          >
+            <option value="">-- เลือกตำบล-อำเภอ-จังหวัด ด่วน --</option>
+            {AREA_PRESETS.map((p, idx) => (
+              <option key={p.label} value={String(idx)}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              ตำบล
+            </label>
+            <input
+              type="text"
+              value={subdistrict}
+              onChange={(e) => setSubdistrict(e.target.value)}
+              placeholder="ต.สลกบาตร"
+              className={`${inputCls} px-2.5 text-xs`}
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              อำเภอ
+            </label>
+            <input
+              type="text"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              placeholder="อ.ขาณุฯ"
+              className={`${inputCls} px-2.5 text-xs`}
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+              จังหวัด
+            </label>
+            <input
+              type="text"
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              placeholder="จ.กำแพงเพชร"
+              className={`${inputCls} px-2.5 text-xs`}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              เบอร์โทร *
+            </label>
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="08xxxxxxxx"
+              className={`${inputCls} text-sm font-mono`}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              ราคา / ยอดชำระ (บาท)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className={`${inputCls} text-sm font-mono`}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            สถานะคำขอ
+          </label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className={`${inputCls} text-sm`}
+          >
+            <option value="รอตรวจสอบ">รอตรวจสอบ</option>
+            <option value="รอชำระเงิน">รอชำระเงิน</option>
+            <option value="อยู่ระหว่างติดตั้ง">อยู่ระหว่างติดตั้ง</option>
+            <option value="ติดตั้งเสร็จสิ้น">ติดตั้งเสร็จสิ้น</option>
+            <option value="ไม่มีเส้นท่อ/ยกเลิก">ไม่มีเส้นท่อ/ยกเลิก</option>
+          </select>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              พิกัด (lat/long)
+            </label>
+            <button
+              type="button"
+              onClick={onCaptureCurrentGps}
+              className="text-[11px] font-medium text-[#2271B3] dark:text-[#5EA6E0] hover:underline inline-flex items-center gap-1"
+            >
+              <LocateFixed className="w-3 h-3" />
+              <span>ดึงจาก GPS ปัจจุบัน</span>
+            </button>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              value={latLngText}
+              onChange={(e) => setLatLngText(e.target.value)}
+              onBlur={handleLatLngBlur}
+              placeholder="คลิกจุดบนแผนที่ หรือพิมพ์ lat, long"
+              className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-1.5 pl-8 pr-3 text-xs font-mono text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+            />
+            <Crosshair className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2.5 top-2" />
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            คลิกตำแหน่งบนแผนที่หรือลากหมุดสีฟ้าเพื่อระบุพิกัดที่แม่นยำ
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 inline-flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
+              <span>รูปหน้าบ้าน (1 รูป)</span>
+            </label>
+            <a
+              href={buildDriveFolderUrl(driveFolderId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-medium text-[#2271B3] dark:text-[#5EA6E0] hover:underline inline-flex items-center gap-1"
+            >
+              <span>ดูโฟลเดอร์ Drive</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoFileChange}
+            className="hidden"
+          />
+
+          {pendingPhoto ? (
+            <div className="rounded-lg border border-slate-200 dark:border-[#263850] bg-slate-50 dark:bg-[#0F1826] p-2.5 space-y-2">
+              <div className="flex items-start gap-2.5">
+                <img
+                  src={pendingPhoto.previewDataUrl}
+                  alt="ตัวอย่างรูปหน้าบ้าน"
+                  className="w-20 h-16 object-cover rounded-lg border border-slate-200 dark:border-[#263850] shrink-0 bg-white dark:bg-[#162336]"
+                />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-xs font-medium text-slate-800 dark:text-slate-100 truncate">
+                    {pendingPhoto.name}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                    พร้อมอัปโหลด · {Math.max(1, Math.round(pendingPhoto.sizeBytes / 1024))} KB
+                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      disabled={isPreparingPhoto || isSubmitting}
+                      onClick={() => photoInputRef.current?.click()}
+                      className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] hover:border-[#2271B3] text-[#2271B3] dark:text-[#5EA6E0] transition-colors"
+                    >
+                      เปลี่ยนรูป
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={handleClearPhoto}
+                      className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] hover:border-rose-300 text-rose-600 dark:text-rose-400 inline-flex items-center gap-1 transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>ลบรูป</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {!isGoogleConnected && !hasAppsScript && (
+                <div className="pt-2 border-t border-slate-200 dark:border-[#213145] flex items-center justify-between gap-2 text-[11px] text-amber-800 dark:text-amber-300">
+                  <span>ต้องเชื่อมสิทธิ์ Google เพื่ออัปโหลดรูปเข้า Drive</span>
+                  <button
+                    type="button"
+                    disabled={isGoogleSigningIn}
+                    onClick={() => (onConnectGoogleForDrive ? onConnectGoogleForDrive() : onConnectGoogle())}
+                    className="px-2.5 py-1 bg-[#2271B3] hover:bg-[#1A5A8F] text-white rounded-md font-semibold shrink-0 transition-colors"
+                  >
+                    เชื่อมสิทธิ์ Drive
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : existingPhotoUrl ? (
+            <div className="rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/70 dark:bg-emerald-950/25 p-2.5 flex items-center justify-between gap-2">
+              <a
+                href={existingPhotoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-[#2271B3] dark:text-[#5EA6E0] hover:underline inline-flex items-center gap-1.5 min-w-0 truncate"
+              >
+                <ImageIcon className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span className="truncate">ดูรูปหน้าบ้านที่บันทึกไว้</span>
+                <ExternalLink className="w-3 h-3 shrink-0" />
+              </a>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  disabled={isPreparingPhoto || isSubmitting}
+                  onClick={() => photoInputRef.current?.click()}
+                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] text-[#2271B3] dark:text-[#5EA6E0]"
+                >
+                  เปลี่ยนรูปใหม่
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={handleClearPhoto}
+                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white dark:bg-[#162336] border border-slate-200 dark:border-[#263850] text-rose-600 dark:text-rose-400"
+                >
+                  ลบรูป
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={isPreparingPhoto || isSubmitting}
+              onClick={() => photoInputRef.current?.click()}
+              className="w-full py-2.5 px-3 rounded-lg border border-dashed border-slate-300 dark:border-[#2D425C] bg-slate-50 dark:bg-[#0F1826] hover:bg-[#EDF5FC]/70 dark:hover:bg-[#162336] hover:border-[#2271B3] dark:hover:border-[#5EA6E0] text-slate-700 dark:text-slate-200 transition-colors flex items-center justify-center gap-2 text-xs"
+            >
+              <Camera className="w-4 h-4 text-[#2271B3] dark:text-[#5EA6E0] shrink-0" />
+              <div className="text-left">
+                <span className="font-medium block leading-tight">
+                  {isPreparingPhoto ? 'กำลังเตรียมรูปภาพ...' : 'เลือกรูป / ถ่ายรูปหน้าบ้าน (1 รูป)'}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                  บันทึกลง Google Drive อัตโนมัติ
+                </span>
+              </div>
+            </button>
+          )}
+
+          {photoError && (
+            <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1">{photoError}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            หมายเหตุเพิ่มเติม
+          </label>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="รายละเอียดจุดติดตั้งหรือหมายเหตุ..."
+            rows={2}
+            className={`${inputCls} text-xs resize-none`}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting || isPreparingPhoto}
+          className="w-full py-2.5 px-4 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <Save className="w-4 h-4" />
+          <span>
+            {isSubmitting
+              ? 'กำลังบันทึกข้อมูล...'
+              : editingRecord
+              ? 'บันทึกการแก้ไขคำขอ'
+              : 'บันทึกข้อมูลคำขอ'}
+          </span>
+        </button>
+      </form>
+    </aside>
+  );
+};

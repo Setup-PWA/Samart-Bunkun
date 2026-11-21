@@ -1,0 +1,604 @@
+import React, { useMemo, useState } from 'react';
+import {
+  BarChart2,
+  Banknote,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  FileSpreadsheet,
+  FileText,
+  Image as ImageIcon,
+  ListChecks,
+  Loader2,
+  MapPin,
+  MapPinned,
+  PenLine,
+  Phone,
+  Search,
+  Trash2,
+} from 'lucide-react';
+import { MeterRequest, formatLatLngString, getStatusMeta } from '../types/meter';
+import {
+  ExportFilterContext,
+  ExportScope,
+  computeExportAnalytics,
+  describeActiveFilters,
+  exportFilteredToExcel,
+  exportFilteredToPdf,
+} from '../services/exportService';
+
+interface RequestsTableProps {
+  records: MeterRequest[];
+  totalCount: number;
+  isLoading: boolean;
+  isAdmin: boolean;
+  embedded?: boolean;
+  searchQuery: string;
+  filterContext: ExportFilterContext;
+  onSearchChange: (q: string) => void;
+  onFocusRecord: (record: MeterRequest) => void;
+  onEditRecord: (record: MeterRequest) => void;
+  onDeleteRecord: (record: MeterRequest) => void;
+  onExportFeedback?: (
+    message: string,
+    tone: 'info' | 'success' | 'warning' | 'error'
+  ) => void;
+}
+
+export const RequestsTable: React.FC<RequestsTableProps> = ({
+  records,
+  totalCount,
+  isLoading,
+  isAdmin,
+  embedded = false,
+  searchQuery,
+  filterContext,
+  onSearchChange,
+  onFocusRecord,
+  onEditRecord,
+  onDeleteRecord,
+  onExportFeedback,
+}) => {
+  const [exportScope, setExportScope] = useState<ExportScope>('all');
+  const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
+  const [showSummaryStrip, setShowSummaryStrip] = useState(true);
+
+  const analytics = useMemo(() => computeExportAnalytics(records), [records]);
+  const activeFilterText = useMemo(
+    () => describeActiveFilters(filterContext),
+    [filterContext]
+  );
+
+  const formatDate = (iso: string) => {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const handleExportExcel = async () => {
+    if (records.length === 0 || isExporting) return;
+    setIsExporting('excel');
+    try {
+      const filename = await exportFilteredToExcel(records, filterContext, exportScope);
+      onExportFeedback?.(
+        `ส่งออกไฟล์ Excel (${filename}) สำเร็จแล้ว (${records.length} รายการ)`,
+        'success'
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถสร้างไฟล์ Excel ได้';
+      onExportFeedback?.(`ส่งออก Excel ไม่สำเร็จ: ${msg}`, 'error');
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (records.length === 0 || isExporting) return;
+    setIsExporting('pdf');
+    try {
+      const filename = await exportFilteredToPdf(records, filterContext, exportScope);
+      onExportFeedback?.(
+        `ส่งออกไฟล์ PDF (${filename}) สำเร็จแล้ว (${records.length} รายการ)`,
+        'success'
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถสร้างไฟล์ PDF ได้';
+      onExportFeedback?.(`ส่งออก PDF ไม่สำเร็จ: ${msg}`, 'error');
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const topAreas = analytics.areaBreakdown.slice(0, 4);
+  const maxAreaCount = Math.max(...topAreas.map((a) => a.count), 1);
+  const mappedPct =
+    analytics.total > 0 ? Math.round((analytics.mappedCount / analytics.total) * 100) : 0;
+
+  return (
+    <section
+      id={embedded ? undefined : 'table-section'}
+      className={
+        embedded
+          ? 'transition-colors'
+          : 'bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden transition-colors'
+      }
+    >
+      {/* Header & Search + Export Toolbar */}
+      <div className="px-5 py-4 border-b border-slate-200 dark:border-[#213145] flex flex-col xl:flex-row xl:items-center justify-between gap-3.5">
+        <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+          <span className="w-8 h-8 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
+            <ListChecks className="w-4 h-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              รายการคำขอติดตั้ง / ย้ายมาตรวัดน้ำ
+            </h2>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <span className="tabular-nums">
+                แสดง {records.length.toLocaleString('th-TH')} จากทั้งหมด{' '}
+                {totalCount.toLocaleString('th-TH')} รายการ
+              </span>
+              <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">·</span>
+              <span className="text-[#2271B3] dark:text-[#5EA6E0] font-medium truncate max-w-[360px]">
+                {activeFilterText}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 sm:flex-none sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="ค้นหาเลขที่ RQ, ชื่อ-สกุล, ตำบล..."
+              className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+            />
+          </div>
+
+          <select
+            aria-label="เลือกรูปแบบส่วนข้อมูลสำหรับส่งออก"
+            value={exportScope}
+            onChange={(e) => setExportScope(e.target.value as ExportScope)}
+            className="bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+          >
+            <option value="all">ทั้งหมด (แดชบอร์ด + ตาราง)</option>
+            <option value="by_status">แยกตามสถานะคำขอ</option>
+            <option value="by_area">แยกตามตำบล / พื้นที่</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={records.length === 0 || isExporting !== null}
+            title="ส่งออกรายการที่กรองพร้อมภาพแดชบอร์ดสรุปเป็น Excel (.xlsx)"
+            className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
+          >
+            {isExporting === 'excel' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+            )}
+            <span>ส่งออก Excel</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={records.length === 0 || isExporting !== null}
+            title="ส่งออกรายการที่กรองพร้อมภาพแดชบอร์ดสรุปเป็น PDF (.pdf)"
+            className="px-3 py-2 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
+          >
+            {isExporting === 'pdf' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileText className="w-3.5 h-3.5" />
+            )}
+            <span>ส่งออก PDF</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowSummaryStrip((prev) => !prev)}
+            className="px-2.5 py-2 bg-slate-100 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-200/70 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition-colors inline-flex items-center gap-1 whitespace-nowrap"
+            title={showSummaryStrip ? 'ซ่อนภาพแดชบอร์ดสรุปในตาราง' : 'แสดงภาพแดชบอร์ดสรุปในตาราง'}
+          >
+            <BarChart2 className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
+            <span className="hidden sm:inline">สรุป</span>
+            {showSummaryStrip ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Inline Visual Summary Dashboard inside Table Section */}
+      {showSummaryStrip && (
+        <div className="bg-[#F8FAFD] dark:bg-[#0D1724] border-b border-slate-200 dark:border-[#213145] p-4 sm:p-5 space-y-4 transition-colors">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-4 rounded-full bg-[#2271B3] dark:bg-[#5EA6E0]" />
+              <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                ภาพแดชบอร์ดสรุปข้อมูลในตาราง (ตามรายการที่กรอง)
+              </h3>
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              ข้อมูลชุดเดียวกับที่จะส่งออกเป็นรายงาน Excel และ PDF
+            </span>
+          </div>
+
+          {/* 4 Balanced Mini KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white dark:bg-[#111C2B] border border-slate-200/90 dark:border-[#213145] rounded-xl p-3.5 space-y-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>จำนวนคำขอที่กรอง</span>
+                <ListChecks className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
+              </div>
+              <div className="text-lg font-bold text-[#2271B3] dark:text-[#5EA6E0] tabular-nums">
+                {analytics.total.toLocaleString('th-TH')}{' '}
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">รายการ</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                เฉลี่ย {analytics.avgAmount.toLocaleString('th-TH', { maximumFractionDigits: 0 })} บาท/ราย
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#111C2B] border border-slate-200/90 dark:border-[#213145] rounded-xl p-3.5 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>อัตราติดตั้งเสร็จสิ้น</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  {analytics.completionRate}%
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                  {analytics.completed}/{analytics.total} ราย
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-[#1B2B40] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${analytics.completionRate}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-[#111C2B] border border-slate-200/90 dark:border-[#213145] rounded-xl p-3.5 space-y-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>มูลค่า / ค่าธรรมเนียมรวม</span>
+                <Banknote className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums truncate">
+                {analytics.totalAmount.toLocaleString('th-TH', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{' '}
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">฿</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                รอชำระเงิน {analytics.unpaid.toLocaleString('th-TH')} รายการ
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-[#111C2B] border border-slate-200/90 dark:border-[#213145] rounded-xl p-3.5 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>พิกัดพร้อมนำทางบนแผนที่</span>
+                <MapPinned className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                  {mappedPct}%
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                  {analytics.mappedCount}/{analytics.total} พิกัด
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-[#1B2B40] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#2271B3] dark:bg-[#5EA6E0] transition-all duration-300"
+                  style={{ width: `${mappedPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 2-Column Visual Breakdown: Status Proportion Bar + Top Areas */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Left: Status Proportion */}
+            <div className="bg-white dark:bg-[#111C2B] border border-slate-200/90 dark:border-[#213145] rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                  สัดส่วนสถานะคำขอ
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                  {analytics.statusBreakdown.length} สถานะ
+                </span>
+              </div>
+
+              <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-[#1B2B40] overflow-hidden flex">
+                {analytics.total > 0 &&
+                  analytics.statusBreakdown.map((st) => (
+                    <div
+                      key={st.status}
+                      title={`${st.label}: ${st.count} รายการ (${st.pct}%)`}
+                      style={{
+                        width: `${(st.count / analytics.total) * 100}%`,
+                        backgroundColor: st.color,
+                      }}
+                      className="h-full transition-all duration-300"
+                    />
+                  ))}
+              </div>
+
+              {analytics.statusBreakdown.length === 0 ? (
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 py-2">
+                  ไม่มีข้อมูลในตัวกรองปัจจุบัน
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                  {analytics.statusBreakdown.map((st) => (
+                    <div
+                      key={st.status}
+                      className="flex items-center justify-between text-[11px] py-0.5"
+                    >
+                      <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-200 truncate">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: st.color }}
+                        />
+                        <span className="truncate">{st.label}</span>
+                      </span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums shrink-0 ml-2">
+                        {st.count} ({st.pct}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Top Areas / Subdistricts */}
+            <div className="bg-white dark:bg-[#111C2B] border border-slate-200/90 dark:border-[#213145] rounded-xl p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-100">
+                  ปริมาณคำขอแยกตามตำบล / พื้นที่ (สูงสุด 4 อันดับ)
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                  รวม {analytics.areaBreakdown.length} พื้นที่
+                </span>
+              </div>
+
+              {topAreas.length === 0 ? (
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 py-2">
+                  ไม่มีข้อมูลพื้นที่ในตัวกรองปัจจุบัน
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {topAreas.map((area) => {
+                    const widthPct = Math.max(Math.round((area.count / maxAreaCount) * 100), 6);
+                    return (
+                      <div key={area.area} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-medium text-slate-700 dark:text-slate-200 truncate pr-2">
+                            {area.area}
+                          </span>
+                          <span className="text-slate-600 dark:text-slate-300 tabular-nums shrink-0">
+                            <strong className="text-[#2271B3] dark:text-[#5EA6E0]">
+                              {area.count}
+                            </strong>{' '}
+                            ราย ·{' '}
+                            {area.amount.toLocaleString('th-TH', {
+                              maximumFractionDigits: 0,
+                            })}{' '}
+                            ฿
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-[#1B2B40] overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-[#2271B3] dark:bg-[#3584C7] transition-all duration-300"
+                            style={{ width: `${widthPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Table */}
+      <div className="overflow-x-auto max-h-[520px]">
+        <table className="w-full text-left border-collapse">
+          <thead className="sticky top-0 bg-slate-50/95 dark:bg-[#0F1826]/95 backdrop-blur-xs border-b border-slate-200 dark:border-[#213145] z-10">
+            <tr className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+              <th className="py-3 px-4 whitespace-nowrap">เลขที่ RQ</th>
+              <th className="py-3 px-4 whitespace-nowrap">วันที่ยื่นคำร้อง</th>
+              <th className="py-3 px-4 whitespace-nowrap">ชื่อ - สกุล</th>
+              <th className="py-3 px-4 whitespace-nowrap">ที่อยู่ / หมู่ที่ / พื้นที่</th>
+              <th className="py-3 px-4 whitespace-nowrap">เบอร์โทร</th>
+              <th className="py-3 px-4 text-right whitespace-nowrap">ราคา (บาท)</th>
+              <th className="py-3 px-4 whitespace-nowrap">สถานะ</th>
+              <th className="py-3 px-4 whitespace-nowrap">พิกัด (lat/long)</th>
+              {isAdmin && (
+                <th className="py-3 px-4 text-center whitespace-nowrap">จัดการ</th>
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-[#1B2B40] text-xs text-slate-700 dark:text-slate-300">
+            {isLoading && records.length === 0 ? (
+              Array.from({ length: 4 }).map((_, idx) => (
+                <tr key={idx}>
+                  <td colSpan={isAdmin ? 9 : 8} className="py-4 px-4">
+                    <div className="h-4 bg-slate-100 dark:bg-[#1B2B40] rounded animate-pulse w-full" />
+                  </td>
+                </tr>
+              ))
+            ) : records.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={isAdmin ? 9 : 8}
+                  className="py-12 px-4 text-center text-slate-400 dark:text-slate-500"
+                >
+                  ไม่พบรายการคำขอที่ตรงกับเงื่อนไขการค้นหา
+                </td>
+              </tr>
+            ) : (
+              records.map((rec) => {
+                const statusMeta = getStatusMeta(rec.status);
+                const coordsStr = formatLatLngString(rec.latitude, rec.longitude);
+
+                return (
+                  <tr
+                    key={rec.uid}
+                    className="hover:bg-[#EDF5FC]/45 dark:hover:bg-[#162336] transition-colors"
+                  >
+                    <td className="py-3 px-4 font-mono font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap tabular-nums">
+                      {rec.rqNumber || `#${rec.rowIndex}`}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap tabular-nums text-slate-600 dark:text-slate-400">
+                      {formatDate(rec.requestDate)}
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                      {rec.fullName || '-'}
+                    </td>
+                    <td className="py-3 px-4 max-w-[260px]">
+                      <div className="text-slate-800 dark:text-slate-200 truncate">
+                        {rec.houseNo ? `บ้านเลขที่ ${rec.houseNo} · ` : ''}
+                        {rec.moo ? `หมู่ที่ ${rec.moo}` : '-'}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {rec.locationSummary || '-'}
+                      </div>
+                      {rec.housePhotoUrl && /^https?:\/\//i.test(rec.housePhotoUrl) && (
+                        <a
+                          href={rec.housePhotoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[#2271B3] dark:text-[#5EA6E0] hover:underline"
+                          title="เปิดดูรูปหน้าบ้านใน Google Drive"
+                        >
+                          <ImageIcon className="w-3 h-3 shrink-0" />
+                          <span>ดูรูปหน้าบ้าน</span>
+                          <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                        </a>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap font-mono tabular-nums">
+                      {rec.phone ? (
+                        <a
+                          href={`tel:${rec.phone}`}
+                          className="text-[#2271B3] dark:text-[#5EA6E0] hover:underline inline-flex items-center gap-1"
+                        >
+                          <Phone className="w-3 h-3" />
+                          <span>{rec.phone}</span>
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-600">-</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">
+                      {rec.price.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-200">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: statusMeta.color }}
+                        />
+                        <span>{statusMeta.label}</span>
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap font-mono text-[11px] tabular-nums">
+                      {coordsStr ? (
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onFocusRecord(rec)}
+                            className="text-[#2271B3] dark:text-[#5EA6E0] hover:underline inline-flex items-center gap-1"
+                            title="ดูตำแหน่งบนแผนที่"
+                          >
+                            <MapPin className="w-3 h-3 shrink-0" />
+                            <span>{coordsStr}</span>
+                          </button>
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${rec.latitude},${rec.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 dark:text-slate-500 hover:text-[#2271B3] dark:hover:text-[#5EA6E0]"
+                            title="เปิดใน Google Maps"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500">ยังไม่ระบุพิกัด</span>
+                      )}
+                    </td>
+                    {isAdmin && (
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => onEditRecord(rec)}
+                            className="px-2.5 py-1 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:border-[#2271B3] dark:hover:border-[#5EA6E0] hover:bg-[#EDF5FC] dark:hover:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] rounded-md font-medium inline-flex items-center gap-1 transition-colors"
+                          >
+                            <PenLine className="w-3 h-3" />
+                            <span>แก้ไข</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteRecord(rec)}
+                            className="px-2.5 py-1 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:border-rose-300 dark:hover:border-rose-500/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-md font-medium inline-flex items-center gap-1 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>ลบ</span>
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+          {records.length > 0 && (
+            <tfoot className="sticky bottom-0 bg-[#EDF5FC] dark:bg-[#132236] border-t-2 border-[#2271B3]/30 dark:border-[#3584C7]/40 text-xs font-semibold text-slate-900 dark:text-slate-100">
+              <tr>
+                <td colSpan={5} className="py-2.5 px-4 text-right text-[#1A5A8F] dark:text-[#8CC5F2]">
+                  รวมรายการตามเงื่อนไขที่กรอง ({analytics.total.toLocaleString('th-TH')} รายการ)
+                </td>
+                <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#1A5A8F] dark:text-[#5EA6E0]">
+                  {analytics.totalAmount.toLocaleString('th-TH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
+                <td colSpan={isAdmin ? 3 : 2} className="py-2.5 px-4 text-left text-slate-500 dark:text-slate-400 font-normal">
+                  บาท
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </section>
+  );
+};
+
