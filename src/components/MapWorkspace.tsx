@@ -94,12 +94,12 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   return (
     <section
       id="map-section"
-      className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden flex flex-col transition-colors min-w-0"
+      className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl shadow-xs overflow-hidden flex flex-col transition-colors min-w-0"
     >
       {/* Map Toolbar Header */}
-      <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-200 dark:border-[#213145] flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 bg-white dark:bg-[#111C2B]">
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[#DCE6F3] dark:border-[#1D3350] flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 bg-white dark:bg-[#0F1B2E]">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="w-7 h-7 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
+          <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#0B4DA2] dark:bg-[#256EC2] text-white flex items-center justify-center shadow-xs shrink-0">
             <MapPin className="w-4 h-4" />
           </span>
           <div className="min-w-0">
@@ -115,7 +115,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {/* Layer Switcher (Roadmap / Satellite / Hybrid / Terrain) */}
-          <div className="inline-flex items-center bg-slate-100 dark:bg-[#0F1826] p-0.5 rounded-lg border border-slate-200 dark:border-[#263850]">
+          <div className="inline-flex items-center bg-[#F4F8FD] dark:bg-[#091322] p-0.5 rounded-lg border border-[#D5E3F4] dark:border-[#1D3350]">
             <Layers className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 mx-1.5 hidden md:block" />
             {LAYER_OPTIONS.map((opt) => (
               <button
@@ -124,7 +124,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
                 onClick={() => setLayerType(opt.id)}
                 className={`px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                   layerType === opt.id
-                    ? 'bg-[#2271B3] dark:bg-[#3584C7] text-white shadow-xs'
+                    ? 'bg-[#0B4DA2] dark:bg-[#2B7CD3] text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -136,16 +136,16 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           <button
             type="button"
             onClick={onLocateUser}
-            className="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] hover:bg-[#E7F0FC] dark:hover:bg-[#15253D] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
           >
-            <LocateFixed className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
+            <LocateFixed className="w-3.5 h-3.5 text-[#0B4DA2] dark:text-[#66B2FF]" />
             <span>ตำแหน่งฉัน</span>
           </button>
 
           <button
             type="button"
             onClick={() => setFitAllTrigger((c) => c + 1)}
-            className="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] hover:bg-[#E7F0FC] dark:hover:bg-[#15253D] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
           >
             <Scan className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
             <span>ดูทั้งหมด</span>
@@ -155,7 +155,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
             type="button"
             onClick={() => setIsMapExpanded((prev) => !prev)}
             title={isMapExpanded ? 'ย่อขนาดแผนที่' : 'ขยายขนาดแผนที่'}
-            className="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] hover:bg-[#E7F0FC] dark:hover:bg-[#15253D] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
           >
             {isMapExpanded ? (
               <>
@@ -296,7 +296,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       </div>
 
       {/* Legend Bar */}
-      <div className="px-3 sm:px-4 py-2 bg-slate-50 dark:bg-[#0F1826] border-t border-slate-200 dark:border-[#213145] flex flex-wrap items-center gap-x-3.5 sm:gap-x-5 gap-y-1 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300">
+      <div className="px-3 sm:px-4 py-2 bg-[#F4F8FD] dark:bg-[#0A1424] border-t border-[#DCE6F3] dark:border-[#1D3350] flex flex-wrap items-center gap-x-3.5 sm:gap-x-5 gap-y-1 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300">
         <span className="font-semibold text-slate-700 dark:text-slate-200">สัญลักษณ์:</span>
         {LEGEND_ITEMS.map((item) => (
           <span key={item.label} className="inline-flex items-center gap-1.5">

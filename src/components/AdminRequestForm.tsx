@@ -248,11 +248,11 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
     hasAppsScript || serviceAccountConfigured || isGoogleConnected;
 
   const inputCls =
-    'w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-1.5 px-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors';
+    'w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-1.5 px-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors';
 
   return (
-    <aside className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden flex flex-col transition-colors">
-      <div className="px-5 py-3.5 border-b border-[#1A5A8F] bg-[#2271B3] dark:bg-[#1A5A8F] text-white flex items-center justify-between gap-2">
+    <aside className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl shadow-xs overflow-hidden flex flex-col transition-colors">
+      <div className="px-5 py-3.5 border-b border-[#08306E]/30 dark:border-[#1D3350] bg-gradient-to-r from-[#0A3A82] to-[#0F62BD] dark:from-[#0C254B] dark:to-[#133B70] text-white flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {editingRecord ? (
             <PenLine className="w-4 h-4 text-amber-300 shrink-0" />
@@ -768,7 +768,7 @@ export const AdminRequestForm: React.FC<AdminRequestFormProps> = ({
         <button
           type="submit"
           disabled={isSubmitting || isPreparingPhoto}
-          className="w-full py-2.5 px-4 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-4 bg-[#0B4DA2] hover:bg-[#083A7E] dark:bg-[#2B7CD3] dark:hover:bg-[#2266B5] disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-semibold text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
         >
           <Save className="w-4 h-4" />
           <span>

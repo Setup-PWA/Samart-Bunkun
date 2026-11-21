@@ -1061,7 +1061,7 @@ export default function App() {
     : 'กำลังเชื่อมต่อ...';
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-[#F3F6FA] dark:bg-[#0B131E] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-[#EEF4FB] dark:bg-[#08111E] text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {mapsQuotaExceeded && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-[1100] shadow-sm">
           <span>
@@ -1078,39 +1078,38 @@ export default function App() {
           </span>
         </div>
       )}
-      {/* Top Navigation Bar (Strict 3-Zone Contract) */}
-      <header className="sticky top-0 z-[1000] bg-white/95 dark:bg-[#111C2B]/95 backdrop-blur-xs border-b border-slate-200 dark:border-[#213145] transition-colors">
-        <div className="h-[3px] w-full bg-[#2271B3] dark:bg-[#3584C7]" />
+      {/* Top Navigation Bar (Strict 3-Zone Contract, Royal Navy Gradient) */}
+      <header className="sticky top-0 z-[1000] bg-gradient-to-r from-[#0A3A82] via-[#0F5EBC] to-[#117CC8] dark:from-[#071A38] dark:via-[#0B2A57] dark:to-[#0F3B73] border-b border-[#08306E]/30 dark:border-[#1D3A60] shadow-xs transition-colors">
         <div className="max-w-[1440px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-8">
           {/* Zone 1: Single-line Brand Wordmark */}
           <a
             href="#map-section"
-            className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-sm sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100"
+            className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-sm sm:text-lg font-bold tracking-tight text-white"
           >
-            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#2271B3] dark:bg-[#3584C7] text-white flex items-center justify-center shrink-0">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white text-[#0A3A82] dark:bg-[#133B70] dark:text-[#7CC4FF] dark:border dark:border-[#255799] shadow-xs flex items-center justify-center shrink-0">
               <Droplets className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
             <span className="truncate">ระบบติดตามมาตรวัดน้ำ</span>
           </a>
 
           {/* Zone 2: Clean Single-line Nav Links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-white/85">
             <a
               href="#map-section"
-              className="hover:text-[#2271B3] dark:hover:text-[#5EA6E0] transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-white hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
             >
               แผนที่พิกัด
             </a>
             <a
               href="#analytics-section"
-              className="hover:text-[#2271B3] dark:hover:text-[#5EA6E0] transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-white hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
             >
               สถิติภาพรวม
             </a>
             {isAdmin && (
               <a
                 href="#table-section"
-                className="hover:text-[#2271B3] dark:hover:text-[#5EA6E0] transition-colors whitespace-nowrap shrink-0"
+                className="hover:text-white hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
               >
                 รายการคำขอ
               </a>
@@ -1124,7 +1123,7 @@ export default function App() {
             <div
               role="group"
               aria-label="โหมดแสดงผลกลางวันและกลางคืน"
-              className="inline-flex items-center bg-slate-100 dark:bg-[#0F1826] p-0.5 rounded-lg border border-slate-200 dark:border-[#263850]"
+              className="inline-flex items-center bg-white/15 dark:bg-[#081529]/70 p-0.5 rounded-lg border border-white/25 dark:border-[#244A7A]"
             >
               <button
                 type="button"
@@ -1133,8 +1132,8 @@ export default function App() {
                 title="โหมดกลางวัน"
                 className={`px-1.5 sm:px-2.5 py-1.5 rounded-md text-xs font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap ${
                   !isDark
-                    ? 'bg-[#2271B3] text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-white text-[#0A3A82] shadow-xs'
+                    : 'text-white/80 hover:text-white'
                 }`}
               >
                 <Sun className="w-3.5 h-3.5" />
@@ -1147,8 +1146,8 @@ export default function App() {
                 title="โหมดกลางคืน"
                 className={`px-1.5 sm:px-2.5 py-1.5 rounded-md text-xs font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap ${
                   isDark
-                    ? 'bg-[#3584C7] text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[#2B7CD3] text-white shadow-xs'
+                    : 'text-white/80 hover:text-white'
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
@@ -1166,7 +1165,7 @@ export default function App() {
                   showToast('ออกจากโหมดผู้ดูแลระบบแล้ว', 'info');
                 }}
                 title="ออกจากระบบ Admin"
-                className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="sm:hidden">ออก</span>
@@ -1177,9 +1176,9 @@ export default function App() {
                 type="button"
                 onClick={() => setAuthModalOpen(true)}
                 title="เข้าสู่ระบบ Admin"
-                className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] text-white text-xs font-semibold rounded-lg transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-white hover:bg-blue-50 text-[#0A3A82] dark:bg-[#2B7CD3] dark:hover:bg-[#3689E2] dark:text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-white/90" />
+                <ShieldCheck className="w-3.5 h-3.5" />
                 <span className="sm:hidden">Admin</span>
                 <span className="hidden sm:inline">เข้าสู่ระบบ Admin</span>
               </button>
@@ -1190,7 +1189,7 @@ export default function App() {
 
       {/* Real-time AppSheet / Google Sheets Toolbar (Admin Only) */}
       {isAdmin && (
-        <div className="bg-white dark:bg-[#111C2B] border-b border-slate-200 dark:border-[#213145] transition-colors">
+        <div className="bg-white/95 dark:bg-[#0D192B] border-b border-[#DCE6F3] dark:border-[#1B314E] transition-colors">
           <div className="max-w-[1440px] mx-auto px-3 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-600 dark:text-slate-300 min-w-0">
               <span className="inline-flex items-center gap-1.5 font-medium text-slate-900 dark:text-slate-100">
@@ -1228,7 +1227,7 @@ export default function App() {
                 href={`https://docs.google.com/spreadsheets/d/${sheetConfig.spreadsheetId}/edit`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[#2271B3] dark:text-[#5EA6E0] hover:underline font-medium"
+                className="inline-flex items-center gap-1 text-[#0B4DA2] dark:text-[#66B2FF] hover:underline font-medium"
               >
                 <Database className="w-3.5 h-3.5" />
                 <span>
@@ -1255,7 +1254,7 @@ export default function App() {
                 type="button"
                 onClick={() => syncSheetData({ silent: false })}
                 disabled={isSyncing}
-                className="px-3 py-2 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:opacity-60 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                className="px-3 py-2 bg-[#0B4DA2] hover:bg-[#083A7E] dark:bg-[#2B7CD3] dark:hover:bg-[#2266B5] disabled:opacity-60 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>ซิงค์ทันที</span>
@@ -1277,9 +1276,9 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setSettingsModalOpen(true)}
-                className="px-3 py-2 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                className="px-3 py-2 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] hover:bg-[#E7F0FC] dark:hover:bg-[#15253D] text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
               >
-                <Settings className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                <Settings className="w-3.5 h-3.5 text-[#0B4DA2] dark:text-[#66B2FF]" />
                 <span>ตั้งค่าชีท</span>
               </button>
             </div>
@@ -1288,7 +1287,46 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 min-w-0">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-3 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5 min-w-0">
+        {/* Portal Title Banner (Inspired by Royal-to-Ocean Blue Portal Header Card) */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0A3D8A] via-[#0E64C2] to-[#1798C8] dark:from-[#0B2246] dark:via-[#0F3264] dark:to-[#134B7F] text-white px-4 sm:px-6 py-4 sm:py-5 shadow-sm border border-[#0B4DA2]/20 dark:border-[#1E477A]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-12 -top-12 w-56 h-56 rounded-full bg-white/10 dark:bg-[#5EA6E0]/10 blur-2xl"
+          />
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-[#133A6B] text-[#0A3D8A] dark:text-[#7CC4FF] dark:border dark:border-[#265CA0] shadow-xs flex items-center justify-center shrink-0">
+                <Droplets className="w-5 h-5 sm:w-6 sm:h-6" />
+              </span>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold tracking-tight text-white leading-snug">
+                  ระบบติดตามคำขอติดตั้ง / ย้ายมาตรวัดน้ำ
+                </h1>
+                <p className="text-xs sm:text-[13px] text-sky-100/90 dark:text-slate-300 mt-0.5 leading-snug">
+                  ระบบวิเคราะห์ ติดตามพิกัดแผนที่ และเชื่อมโยงข้อมูล Google Sheets / AppSheet แบบเรียลไทม์
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0 text-xs">
+              <span className="text-sky-100/90 dark:text-slate-300 tabular-nums hidden md:inline">
+                ข้อมูลในตัวกรอง {filteredRecords.length.toLocaleString('th-TH')} / {records.length.toLocaleString('th-TH')} รายการ
+              </span>
+              {!isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 dark:bg-[#163F73] dark:hover:bg-[#1E5292] border border-white/25 dark:border-[#2B64AA] text-white font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>จัดการคำขอ (Admin)</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* Compact Quick Jump Strip for Mobile / Small Tablet */}
         <nav
           aria-label="เมนูลัดบนมือถือ"
@@ -1296,20 +1334,20 @@ export default function App() {
         >
           <a
             href="#map-section"
-            className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-[#2271B3] whitespace-nowrap shrink-0"
+            className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-[#0B4DA2] whitespace-nowrap shrink-0"
           >
             แผนที่พิกัด
           </a>
           <a
             href="#analytics-section"
-            className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-[#2271B3] whitespace-nowrap shrink-0"
+            className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-[#0B4DA2] whitespace-nowrap shrink-0"
           >
             สถิติภาพรวม
           </a>
           {isAdmin && (
             <a
               href="#table-section"
-              className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-[#2271B3] whitespace-nowrap shrink-0"
+              className="px-3 py-1.5 rounded-lg bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-[#0B4DA2] whitespace-nowrap shrink-0"
             >
               รายการคำขอ
             </a>
@@ -1318,7 +1356,7 @@ export default function App() {
 
         {/* Connection Error Alert if Google Sheet cannot be reached */}
         {connectionMode === 'error' && connectionError && (
-          <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <div className="text-xs text-rose-900 dark:text-rose-200 space-y-1">
@@ -1338,7 +1376,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSettingsModalOpen(true)}
-                  className="px-3 py-2 bg-white dark:bg-[#111C2B] border border-rose-200 dark:border-rose-700/60 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-800 dark:text-rose-200 rounded-lg text-xs font-medium"
+                  className="px-3 py-2 bg-white dark:bg-[#0F1B2E] border border-rose-200 dark:border-rose-700/60 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-800 dark:text-rose-200 rounded-lg text-xs font-medium"
                 >
                   ตั้งค่าชีท
                 </button>
@@ -1347,85 +1385,127 @@ export default function App() {
           </div>
         )}
 
-        {/* 4-Column KPI Strip */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-          <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-3 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-3 min-w-0 transition-colors">
-            <div className="min-w-0">
-              <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2">
-                คำขอทั้งหมด
-              </span>
-              <span className="text-xl sm:text-[26px] font-bold text-[#2271B3] dark:text-[#5EA6E0] tabular-nums mt-1 block">
+        {/* 4-Column KPI Strip (Top Accent Bar + Square Icon Badge + Subtle Corner Watermark) */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#0B4DA2] dark:border-t-[#3B8CE2] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
+            <ClipboardList
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-[#0B4DA2] dark:text-[#5EA6E0] opacity-[0.06] dark:opacity-[0.08]"
+            />
+            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#0B4DA2] dark:bg-[#256EC2] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
+              <ClipboardList className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
                 {kpiStats.total}
               </span>
+              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                รายการ
+              </span>
             </div>
-            <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
-              <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
+              คำขอทั้งหมด
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-3 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-3 min-w-0 transition-colors">
-            <div className="min-w-0">
-              <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2">
-                ติดตั้งเสร็จสิ้น
-              </span>
-              <span className="text-xl sm:text-[26px] font-bold text-emerald-600 dark:text-emerald-400 tabular-nums mt-1 block">
+          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#059669] dark:border-t-[#10B981] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
+            <CheckCircle2
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-emerald-600 dark:text-emerald-400 opacity-[0.07] dark:opacity-[0.08]"
+            />
+            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#059669] dark:bg-[#10B981] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
+              <CheckCircle2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
                 {kpiStats.completed}
               </span>
+              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                รายการ
+              </span>
             </div>
-            <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
+              ติดตั้งเสร็จสิ้น
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-3 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-3 min-w-0 transition-colors">
-            <div className="min-w-0">
-              <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2">
-                อยู่ระหว่างติดตั้ง / รอตรวจสอบ
-              </span>
-              <span className="text-xl sm:text-[26px] font-bold text-amber-600 dark:text-amber-400 tabular-nums mt-1 block">
+          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#D97706] dark:border-t-[#F59E0B] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
+            <Clock
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-amber-600 dark:text-amber-400 opacity-[0.07] dark:opacity-[0.08]"
+            />
+            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#D97706] dark:bg-[#F59E0B] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
+              <Clock className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
                 {kpiStats.inProgress}
               </span>
+              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                รายการ
+              </span>
             </div>
-            <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
+              อยู่ระหว่างติดตั้ง / รอตรวจสอบ
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-3 sm:p-5 flex items-center justify-between gap-2.5 sm:gap-3 min-w-0 transition-colors">
-            <div className="min-w-0">
-              <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2">
-                รอชำระเงิน
-              </span>
-              <span className="text-xl sm:text-[26px] font-bold text-rose-600 dark:text-rose-400 tabular-nums mt-1 block">
+          <div className="relative overflow-hidden bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] border-t-[3px] border-t-[#E11D48] dark:border-t-[#F43F5E] rounded-2xl p-3.5 sm:p-5 shadow-xs min-w-0 transition-colors">
+            <CreditCard
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-2 -right-2 w-14 h-14 sm:w-16 sm:h-16 text-rose-600 dark:text-rose-400 opacity-[0.07] dark:opacity-[0.08]"
+            />
+            <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#E11D48] dark:bg-[#F43F5E] text-white flex items-center justify-center shadow-xs mb-2.5 sm:mb-3">
+              <CreditCard className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-none">
                 {kpiStats.unpaid}
               </span>
+              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                รายการ
+              </span>
             </div>
-            <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 block leading-snug line-clamp-2 mt-1">
+              รอชำระเงิน
             </span>
           </div>
         </section>
 
-        {/* Filter Controls */}
-        <section className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-4 sm:p-5 transition-colors">
-          <div className="flex items-center gap-2 mb-3.5">
-            <span className="w-7 h-7 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
-              <Filter className="w-3.5 h-3.5" />
-            </span>
-            <h2 className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100">
-              ตัวกรองข้อมูลสำหรับการติดตามพิกัดและสถิติ
-            </h2>
+        {/* Filter Controls (Deep Navy Header Bar + Clean Inputs) */}
+        <section className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl overflow-hidden shadow-xs transition-colors">
+          <div className="bg-gradient-to-r from-[#0A3A82] to-[#0F62BD] dark:from-[#0C254B] dark:to-[#133B70] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-white">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-sky-200 dark:text-[#7CC4FF] shrink-0" />
+              <h2 className="text-xs sm:text-sm font-semibold">
+                ตัวกรองข้อมูลสำหรับการติดตามพิกัดและสถิติ
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setFilterStatus('');
+                setFilterLocation('');
+                setFilterMonth('');
+                setSearchQuery('');
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 dark:bg-[#163B6B] dark:hover:bg-[#1D4E8C] border border-white/20 dark:border-[#285C9E] text-white text-[11px] sm:text-xs font-medium inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>ล้างตัวกรองทั้งหมด</span>
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                 สถานะคำขอ
               </label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+                className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
               >
                 <option value="">ทั้งหมด</option>
                 {statusOptions.map((st) => (
@@ -1437,13 +1517,13 @@ export default function App() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                 พื้นที่ (ตำบล อำเภอ จังหวัด)
               </label>
               <select
                 value={filterLocation}
                 onChange={(e) => setFilterLocation(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+                className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
               >
                 <option value="">ทั้งหมด</option>
                 {locationOptions.map((loc) => (
@@ -1455,31 +1535,15 @@ export default function App() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
                 เดือน / ปี (วันที่ยื่นคำร้อง)
               </label>
               <input
                 type="month"
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-1.5 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+                className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-1.5 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
               />
-            </div>
-
-            <div className="flex items-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setFilterStatus('');
-                  setFilterLocation('');
-                  setFilterMonth('');
-                  setSearchQuery('');
-                }}
-                className="w-full py-2 px-3 bg-slate-100 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-[#EDF5FC] dark:hover:bg-[#162336] hover:border-[#D6E7F6] dark:hover:border-[#3584C7]/50 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
-                <span>ล้างตัวกรองทั้งหมด</span>
-              </button>
             </div>
           </div>
         </section>
@@ -1557,10 +1621,10 @@ export default function App() {
         {isAdmin && (
           <section
             id="table-section"
-            className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden transition-colors"
+            className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl overflow-hidden shadow-xs transition-colors"
           >
             {/* Admin Tab Bar */}
-            <div className="bg-[#F8FAFD] dark:bg-[#0D1724] border-b border-slate-200 dark:border-[#213145] px-3 sm:px-5 pt-2.5 sm:pt-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+            <div className="bg-[#F4F8FD] dark:bg-[#0A1424] border-b border-[#DCE6F3] dark:border-[#1D3350] px-3 sm:px-5 pt-2.5 sm:pt-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
               <div
                 role="tablist"
                 aria-label="แท็บจัดการข้อมูลสำหรับผู้ดูแลระบบ"
@@ -1573,13 +1637,13 @@ export default function App() {
                   onClick={() => setAdminWorkspaceTab('table')}
                   className={`px-3.5 py-2.5 text-xs font-semibold rounded-t-lg border-b-2 transition-colors inline-flex items-center gap-2 whitespace-nowrap ${
                     adminWorkspaceTab === 'table'
-                      ? 'bg-white dark:bg-[#111C2B] text-[#2271B3] dark:text-[#5EA6E0] border-[#2271B3] dark:border-[#5EA6E0]'
-                      : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#162336]/60'
+                      ? 'bg-white dark:bg-[#0F1B2E] text-[#0B4DA2] dark:text-[#66B2FF] border-[#0B4DA2] dark:border-[#3B8CE2]'
+                      : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#15253D]/60'
                   }`}
                 >
                   <ClipboardList className="w-3.5 h-3.5" />
                   <span>รายการคำขอทั้งหมด</span>
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums bg-slate-100 dark:bg-[#1B2B40] text-slate-700 dark:text-slate-200">
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums bg-[#E8F1FC] dark:bg-[#152B4A] text-[#0B4DA2] dark:text-[#7CC4FF]">
                     {filteredRecords.length.toLocaleString('th-TH')}
                   </span>
                 </button>
@@ -1591,8 +1655,8 @@ export default function App() {
                   onClick={() => setAdminWorkspaceTab('batch_builder')}
                   className={`px-3.5 py-2.5 text-xs font-semibold rounded-t-lg border-b-2 transition-colors inline-flex items-center gap-2 whitespace-nowrap ${
                     adminWorkspaceTab === 'batch_builder'
-                      ? 'bg-white dark:bg-[#111C2B] text-[#2271B3] dark:text-[#5EA6E0] border-[#2271B3] dark:border-[#5EA6E0]'
-                      : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#162336]/60'
+                      ? 'bg-white dark:bg-[#0F1B2E] text-[#0B4DA2] dark:text-[#66B2FF] border-[#0B4DA2] dark:border-[#3B8CE2]'
+                      : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#15253D]/60'
                   }`}
                 >
                   <PackageCheck className="w-3.5 h-3.5" />
@@ -1609,13 +1673,13 @@ export default function App() {
                   onClick={() => setAdminWorkspaceTab('batch_archive')}
                   className={`px-3.5 py-2.5 text-xs font-semibold rounded-t-lg border-b-2 transition-colors inline-flex items-center gap-2 whitespace-nowrap ${
                     adminWorkspaceTab === 'batch_archive'
-                      ? 'bg-white dark:bg-[#111C2B] text-[#2271B3] dark:text-[#5EA6E0] border-[#2271B3] dark:border-[#5EA6E0]'
-                      : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#162336]/60'
+                      ? 'bg-white dark:bg-[#0F1B2E] text-[#0B4DA2] dark:text-[#66B2FF] border-[#0B4DA2] dark:border-[#3B8CE2]'
+                      : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#15253D]/60'
                   }`}
                 >
                   <Archive className="w-3.5 h-3.5" />
                   <span>ที่เก็บข้อมูลชุดงาน</span>
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums bg-[#EDF5FC] dark:bg-[#1A2E47] text-[#2271B3] dark:text-[#5EA6E0]">
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums bg-[#E8F1FC] dark:bg-[#152B4A] text-[#0B4DA2] dark:text-[#7CC4FF]">
                     {completedBatches.length.toLocaleString('th-TH')}
                   </span>
                 </button>
@@ -1680,7 +1744,7 @@ export default function App() {
       </main>
 
       {/* Quiet Footer */}
-      <footer className="bg-white dark:bg-[#111C2B] border-t border-slate-200 dark:border-[#213145] py-5 px-4 sm:px-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors">
+      <footer className="bg-white dark:bg-[#0D192B] border-t border-[#DCE6F3] dark:border-[#1B314E] py-5 px-4 sm:px-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors">
         <p>
           ระบบวิเคราะห์และติดตามคำขอติดตั้ง/ย้ายมาตรวัดน้ำ · เชื่อมโยงข้อมูล Google Sheets / AppSheet แบบเรียลไทม์
         </p>

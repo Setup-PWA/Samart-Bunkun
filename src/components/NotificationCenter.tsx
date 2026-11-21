@@ -89,7 +89,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     if (type === 'deleted') {
       return <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />;
     }
-    return <RefreshCw className="w-4 h-4 text-[#2271B3] dark:text-[#5EA6E0] shrink-0 mt-0.5" />;
+    return <RefreshCw className="w-4 h-4 text-[#0B4DA2] dark:text-[#66B2FF] shrink-0 mt-0.5" />;
   };
 
   return (
@@ -97,10 +97,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="relative px-3 py-2 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
+        className="relative px-3 py-2 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] hover:bg-[#E7F0FB] dark:hover:bg-[#15253D] text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
         aria-label="ศูนย์แจ้งเตือนการเปลี่ยนแปลงข้อมูล"
       >
-        <Bell className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+        <Bell className="w-4 h-4 text-[#0B4DA2] dark:text-[#66B2FF]" />
         <span>แจ้งเตือน</span>
         {unreadCount > 0 && (
           <span className="ml-0.5 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums bg-rose-600 text-white rounded-md leading-none">
@@ -110,8 +110,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl shadow-xl z-[1800] overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-[#213145] flex items-center justify-between bg-slate-50 dark:bg-[#0F1826]">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl shadow-xl z-[1800] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#DCE6F3] dark:border-[#1D3350] flex items-center justify-between bg-[#F4F8FD] dark:bg-[#0A1424]">
             <div>
               <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 การเปลี่ยนแปลงข้อมูลเรียลไทม์
@@ -127,8 +127,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 title={soundEnabled ? 'ปิดเสียงแจ้งเตือน' : 'เปิดเสียงแจ้งเตือน'}
                 className={`p-1.5 rounded-lg border text-xs transition-colors ${
                   soundEnabled
-                    ? 'bg-[#EDF5FC] dark:bg-[#2271B3]/20 border-[#2271B3]/30 dark:border-[#5EA6E0]/40 text-[#2271B3] dark:text-[#5EA6E0]'
-                    : 'bg-white dark:bg-[#111C2B] border-slate-200 dark:border-[#263850] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    ? 'bg-[#E7F0FB] dark:bg-[#132948] border-[#0F62BD]/30 dark:border-[#4EA3FF]/40 text-[#0B4DA2] dark:text-[#66B2FF]'
+                    : 'bg-white dark:bg-[#0F1B2E] border-[#D5E3F4] dark:border-[#1D3350] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
               >
                 {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
@@ -144,7 +144,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 className={`p-1.5 rounded-lg border text-xs transition-colors ${
                   desktopNotifyEnabled
                     ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-700/50 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-white dark:bg-[#111C2B] border-slate-200 dark:border-[#263850] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    : 'bg-white dark:bg-[#0F1B2E] border-[#D5E3F4] dark:border-[#1D3350] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
               >
                 {desktopNotifyEnabled ? (
@@ -156,7 +156,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-[#1B2B40]">
+          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-[#192A43]">
             {events.length === 0 ? (
               <div className="py-10 px-4 text-center text-xs text-slate-400 dark:text-slate-500">
                 ยังไม่มีประวัติการเปลี่ยนแปลงข้อมูลในเซสชันนี้ ระบบกำลังติดตามแบบเรียลไทม์อย่างต่อเนื่อง
@@ -170,10 +170,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     onSelectEvent(ev);
                     setOpen(false);
                   }}
-                  className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-[#162336] transition-colors flex items-start gap-3 ${
+                  className={`w-full text-left px-4 py-3 hover:bg-[#F4F8FD] dark:hover:bg-[#15253D] transition-colors flex items-start gap-3 ${
                     ev.read
-                      ? 'bg-white dark:bg-[#111C2B]'
-                      : 'bg-[#EDF5FC]/60 dark:bg-[#2271B3]/15'
+                      ? 'bg-white dark:bg-[#0F1B2E]'
+                      : 'bg-[#EDF5FD] dark:bg-[#132948]/60'
                   }`}
                 >
                   {renderTypeIcon(ev.type)}
@@ -198,7 +198,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                       </div>
                     )}
                     {ev.latitude !== null && ev.longitude !== null && (
-                      <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-[#2271B3] dark:text-[#5EA6E0] font-medium">
+                      <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-[#0B4DA2] dark:text-[#66B2FF] font-medium">
                         <MapPin className="w-3 h-3" />
                         <span>คลิกเพื่อดูตำแหน่งบนแผนที่</span>
                       </div>
@@ -210,11 +210,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           </div>
 
           {events.length > 0 && (
-            <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0F1826] border-t border-slate-200 dark:border-[#213145] flex items-center justify-between text-xs">
+            <div className="px-4 py-2.5 bg-[#F4F8FD] dark:bg-[#0A1424] border-t border-[#DCE6F3] dark:border-[#1D3350] flex items-center justify-between text-xs">
               <button
                 type="button"
                 onClick={onMarkAllRead}
-                className="text-[#2271B3] dark:text-[#5EA6E0] hover:underline font-medium inline-flex items-center gap-1"
+                className="text-[#0B4DA2] dark:text-[#66B2FF] hover:underline font-medium inline-flex items-center gap-1"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 <span>อ่านแล้วทั้งหมด</span>

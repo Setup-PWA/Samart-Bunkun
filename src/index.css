@@ -6,9 +6,9 @@
 @layer base {
   :root {
     color-scheme: light;
-    --ral-5015: #2271b3;
-    --ral-5015-hover: #1a5a8f;
-    --ral-5015-soft: #edf5fc;
+    --ral-5015: #0b4da2;
+    --ral-5015-hover: #083a7e;
+    --ral-5015-soft: #eef4fb;
   }
 
   html.dark {
@@ -16,7 +16,7 @@
   }
 
   html.dark select option {
-    background-color: #111c2b;
+    background-color: #0f1b2e;
     color: #f1f5f9;
   }
 

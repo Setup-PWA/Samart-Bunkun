@@ -79,10 +79,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
     >
       {/* Status Breakdown Donut */}
-      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-4 sm:p-5 min-w-0 transition-colors">
+      <div className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl p-4 sm:p-5 min-w-0 shadow-xs transition-colors">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-7 h-7 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[#0B4DA2] dark:bg-[#256EC2] text-white flex items-center justify-center shadow-xs shrink-0">
               <PieChart className="w-4 h-4" />
             </span>
             <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
@@ -93,7 +93,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
             <button
               type="button"
               onClick={() => onFilterByStatus('')}
-              className="text-xs text-[#2271B3] dark:text-[#5EA6E0] hover:underline font-medium shrink-0"
+              className="text-xs text-[#0B4DA2] dark:text-[#66B2FF] hover:underline font-medium shrink-0"
             >
               แสดงทั้งหมด
             </button>
@@ -173,10 +173,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                     onClick={() =>
                       onFilterByStatus(isActive ? '' : item.status)
                     }
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs border transition-colors ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs border transition-colors ${
                       isActive
-                        ? 'bg-[#EDF5FC] dark:bg-[#2271B3]/20 border-[#2271B3]/40 dark:border-[#5EA6E0]/50 text-slate-900 dark:text-white'
-                        : 'bg-white dark:bg-[#0F1826] border-slate-100 dark:border-[#213145] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200'
+                        ? 'bg-[#E8F1FC] dark:bg-[#152B4A] border-[#0B4DA2]/40 dark:border-[#3B8CE2]/50 text-slate-900 dark:text-white'
+                        : 'bg-[#F8FBFF] dark:bg-[#0A1424] border-[#DCE6F3] dark:border-[#1D3350] hover:bg-[#EDF5FD] dark:hover:bg-[#15253D] text-slate-700 dark:text-slate-200'
                     }`}
                   >
                     <span className="flex items-center gap-2 font-medium truncate">
@@ -201,10 +201,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       </div>
 
       {/* Subdistrict / Area Horizontal Bar Chart */}
-      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-4 sm:p-5 min-w-0 transition-colors">
+      <div className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl p-4 sm:p-5 min-w-0 shadow-xs transition-colors">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-7 h-7 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-8 h-8 rounded-xl bg-[#0B4DA2] dark:bg-[#256EC2] text-white flex items-center justify-center shadow-xs shrink-0">
               <BarChart3 className="w-4 h-4" />
             </span>
             <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
@@ -234,9 +234,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                       {row.count} รายการ
                     </span>
                   </div>
-                  <div className="h-2.5 w-full bg-slate-100 dark:bg-[#1B2B40] rounded-md overflow-hidden">
+                  <div className="h-2.5 w-full bg-[#EAF1FA] dark:bg-[#132238] rounded-md overflow-hidden">
                     <div
-                      className="h-full bg-[#2271B3] dark:bg-[#3584C7] rounded-md transition-all duration-300"
+                      className="h-full bg-gradient-to-r from-[#0B4DA2] to-[#1396C7] dark:from-[#2B7CD3] dark:to-[#38A8E8] rounded-md transition-all duration-300"
                       style={{ width: `${widthPct}%` }}
                     />
                   </div>

@@ -168,13 +168,13 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
       className={
         embedded
           ? 'transition-colors'
-          : 'bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden transition-colors'
+          : 'bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl overflow-hidden shadow-xs transition-colors'
       }
     >
       {/* Header & Search + Export Toolbar */}
-      <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 dark:border-[#213145] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 border-b border-[#DCE6F3] dark:border-[#1D3350] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-2.5 min-w-0">
-          <span className="w-8 h-8 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
+          <span className="w-8 h-8 rounded-xl bg-[#0B4DA2] dark:bg-[#256EC2] text-white flex items-center justify-center shadow-xs shrink-0">
             <ListChecks className="w-4 h-4" />
           </span>
           <div className="min-w-0">
@@ -187,7 +187,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
                 {totalCount.toLocaleString('th-TH')} รายการ
               </span>
               <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">·</span>
-              <span className="text-[#2271B3] dark:text-[#5EA6E0] font-medium truncate max-w-full sm:max-w-[360px]">
+              <span className="text-[#0B4DA2] dark:text-[#66B2FF] font-medium truncate max-w-full sm:max-w-[360px]">
                 {activeFilterText}
               </span>
             </div>
@@ -202,7 +202,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="ค้นหาเลขที่ RQ, ชื่อ-สกุล, ตำบล..."
-              className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+              className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
             />
           </div>
 
@@ -210,7 +210,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
             aria-label="เลือกรูปแบบส่วนข้อมูลสำหรับส่งออก"
             value={exportScope}
             onChange={(e) => setExportScope(e.target.value as ExportScope)}
-            className="w-full sm:w-auto max-w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+            className="w-full sm:w-auto max-w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
           >
             <option value="all">ทั้งหมด (แดชบอร์ด + ตาราง)</option>
             <option value="by_status">แยกตามสถานะคำขอ</option>
@@ -222,7 +222,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
             onClick={handleExportExcel}
             disabled={records.length === 0 || isExporting !== null}
             title="ส่งออกรายการที่กรองพร้อมภาพแดชบอร์ดสรุปเป็น Excel (.xlsx)"
-            className="px-2.5 sm:px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
+            className="px-2.5 sm:px-3 py-2 bg-[#059669] hover:bg-[#047857] dark:bg-[#0D9488] dark:hover:bg-[#0F766E] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             {isExporting === 'excel' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -237,7 +237,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
             onClick={handleExportPdf}
             disabled={records.length === 0 || isExporting !== null}
             title="ส่งออกรายการที่กรองพร้อมภาพแดชบอร์ดสรุปเป็น PDF (.pdf)"
-            className="px-2.5 sm:px-3 py-2 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
+            className="px-2.5 sm:px-3 py-2 bg-[#0F62BD] hover:bg-[#0B4DA2] dark:bg-[#2B7CD3] dark:hover:bg-[#2266B5] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             {isExporting === 'pdf' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -250,10 +250,10 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
           <button
             type="button"
             onClick={() => setShowSummaryStrip((prev) => !prev)}
-            className="px-2.5 py-2 bg-slate-100 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-200/70 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 text-xs font-medium rounded-lg transition-colors inline-flex items-center gap-1 whitespace-nowrap"
+            className="px-2.5 py-2 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] hover:bg-[#E7F0FC] dark:hover:bg-[#15253D] text-slate-700 dark:text-slate-200 text-xs font-medium rounded-xl transition-colors inline-flex items-center gap-1 whitespace-nowrap"
             title={showSummaryStrip ? 'ซ่อนภาพแดชบอร์ดสรุปในตาราง' : 'แสดงภาพแดชบอร์ดสรุปในตาราง'}
           >
-            <BarChart2 className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
+            <BarChart2 className="w-3.5 h-3.5 text-[#0B4DA2] dark:text-[#66B2FF]" />
             <span className="hidden sm:inline">สรุป</span>
             {showSummaryStrip ? (
               <ChevronUp className="w-3.5 h-3.5" />
@@ -266,7 +266,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
 
       {/* Inline Visual Summary Dashboard inside Table Section */}
       {showSummaryStrip && (
-        <div className="bg-[#F8FAFD] dark:bg-[#0D1724] border-b border-slate-200 dark:border-[#213145] p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 transition-colors">
+        <div className="bg-[#F4F8FD] dark:bg-[#0A1424] border-b border-[#DCE6F3] dark:border-[#1D3350] p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 transition-colors">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-4 rounded-full bg-[#2271B3] dark:bg-[#5EA6E0]" />
@@ -463,10 +463,10 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
       )}
 
       {/* Detailed Table */}
-      <div className="overflow-x-auto max-h-[520px]">
+      <div className="overflow-x-auto max-h-[560px]">
         <table className="w-full text-left border-collapse">
-          <thead className="sticky top-0 bg-slate-50/95 dark:bg-[#0F1826]/95 backdrop-blur-xs border-b border-slate-200 dark:border-[#213145] z-10">
-            <tr className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+          <thead className="sticky top-0 bg-[#0B3B82] dark:bg-[#122E57] text-white border-b border-[#092F6A] dark:border-[#1E4478] z-10">
+            <tr className="text-[11px] font-semibold tracking-wide text-white/95">
               <th className="py-3 px-4 whitespace-nowrap">เลขที่ RQ</th>
               <th className="py-3 px-4 whitespace-nowrap">วันที่ยื่นคำร้อง</th>
               <th className="py-3 px-4 whitespace-nowrap">ชื่อ - สกุล</th>
@@ -621,12 +621,12 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
             )}
           </tbody>
           {records.length > 0 && (
-            <tfoot className="sticky bottom-0 bg-[#EDF5FC] dark:bg-[#132236] border-t-2 border-[#2271B3]/30 dark:border-[#3584C7]/40 text-xs font-semibold text-slate-900 dark:text-slate-100">
+            <tfoot className="sticky bottom-0 bg-[#EBF3FD] dark:bg-[#10243F] border-t-2 border-[#0F62BD]/30 dark:border-[#2B7CD3]/40 text-xs font-semibold text-slate-900 dark:text-slate-100">
               <tr>
-                <td colSpan={5} className="py-2.5 px-4 text-right text-[#1A5A8F] dark:text-[#8CC5F2]">
+                <td colSpan={5} className="py-2.5 px-4 text-right text-[#0A3A82] dark:text-[#8CC5F2]">
                   รวมรายการตามเงื่อนไขที่กรอง ({analytics.total.toLocaleString('th-TH')} รายการ)
                 </td>
-                <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#1A5A8F] dark:text-[#5EA6E0]">
+                <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#0B4DA2] dark:text-[#66B2FF]">
                   {analytics.totalAmount.toLocaleString('th-TH', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -643,7 +643,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
 
       {/* Pagination Bar (10 / 20 / 50 / 100 rows per page) */}
       {records.length > 0 && (
-        <div className="px-3.5 sm:px-5 py-3 bg-[#F8FAFD] dark:bg-[#0D1724] border-t border-slate-200 dark:border-[#213145] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="px-3.5 sm:px-5 py-3 bg-[#F4F8FD] dark:bg-[#0A1424] border-t border-[#DCE6F3] dark:border-[#1D3350] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span className="text-slate-600 dark:text-slate-300 tabular-nums">
               แสดง{' '}
@@ -664,7 +664,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
               <div
                 role="group"
                 aria-label="จำนวนรายการต่อหน้า"
-                className="inline-flex items-center bg-white dark:bg-[#0F1826] p-0.5 rounded-lg border border-slate-200 dark:border-[#263850]"
+                className="inline-flex items-center bg-white dark:bg-[#0F1B2E] p-0.5 rounded-lg border border-[#D5E3F4] dark:border-[#1D3350]"
               >
                 {PAGE_SIZE_OPTIONS.map((size) => {
                   const active = pageSize === size;
@@ -676,8 +676,8 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
                       aria-pressed={active}
                       className={`px-2 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold tabular-nums transition-colors ${
                         active
-                          ? 'bg-[#2271B3] dark:bg-[#3584C7] text-white shadow-xs'
-                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#162336]'
+                          ? 'bg-[#0F62BD] dark:bg-[#2B7CD3] text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-[#EDF5FD] dark:hover:bg-[#15253D]'
                       }`}
                     >
                       {size}
@@ -694,7 +694,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
               onClick={() => setCurrentPage((p) => Math.max(1, Math.min(p, totalPages) - 1))}
               disabled={safeCurrentPage <= 1}
               aria-label="หน้าก่อนหน้า"
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#263850] bg-white dark:bg-[#0F1826] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#162336] disabled:opacity-45 disabled:cursor-not-allowed inline-flex items-center gap-1 font-medium transition-colors"
+              className="px-2.5 py-1.5 rounded-lg border border-[#D5E3F4] dark:border-[#1D3350] bg-white dark:bg-[#0F1B2E] text-slate-700 dark:text-slate-200 hover:bg-[#EDF5FD] dark:hover:bg-[#15253D] disabled:opacity-45 disabled:cursor-not-allowed inline-flex items-center gap-1 font-medium transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>ก่อนหน้า</span>
@@ -710,8 +710,8 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
                     aria-current={item === safeCurrentPage ? 'page' : undefined}
                     className={`min-w-[30px] h-7 px-2 rounded-lg text-[11px] font-semibold tabular-nums border transition-colors ${
                       item === safeCurrentPage
-                        ? 'bg-[#2271B3] dark:bg-[#3584C7] border-[#2271B3] dark:border-[#3584C7] text-white shadow-xs'
-                        : 'bg-white dark:bg-[#0F1826] border-slate-200 dark:border-[#263850] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#162336]'
+                        ? 'bg-[#0F62BD] dark:bg-[#2B7CD3] border-[#0F62BD] dark:border-[#2B7CD3] text-white shadow-xs'
+                        : 'bg-white dark:bg-[#0F1B2E] border-[#D5E3F4] dark:border-[#1D3350] text-slate-700 dark:text-slate-200 hover:bg-[#EDF5FD] dark:hover:bg-[#15253D]'
                     }`}
                   >
                     {item}
@@ -732,7 +732,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
               onClick={() => setCurrentPage((p) => Math.min(totalPages, Math.min(p, totalPages) + 1))}
               disabled={safeCurrentPage >= totalPages}
               aria-label="หน้าถัดไป"
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#263850] bg-white dark:bg-[#0F1826] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#162336] disabled:opacity-45 disabled:cursor-not-allowed inline-flex items-center gap-1 font-medium transition-colors"
+              className="px-2.5 py-1.5 rounded-lg border border-[#D5E3F4] dark:border-[#1D3350] bg-white dark:bg-[#0F1B2E] text-slate-700 dark:text-slate-200 hover:bg-[#EDF5FD] dark:hover:bg-[#15253D] disabled:opacity-45 disabled:cursor-not-allowed inline-flex items-center gap-1 font-medium transition-colors"
             >
               <span>ถัดไป</span>
               <ChevronRight className="w-3.5 h-3.5" />

@@ -52,10 +52,10 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
       aria-modal="true"
       aria-labelledby="admin-login-title"
     >
-      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl w-full max-w-md shadow-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#1A5A8F] flex items-center justify-between bg-[#2271B3] dark:bg-[#1A5A8F] text-white">
+      <div className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl w-full max-w-md shadow-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#0A3A82] dark:border-[#1D3350] flex items-center justify-between bg-gradient-to-r from-[#0A3A82] to-[#0F62BD] dark:from-[#0C254B] dark:to-[#133B70] text-white">
           <div className="flex items-center gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-white/90" />
+            <ShieldCheck className="w-5 h-5 text-white/95" />
             <h3 id="admin-login-title" className="font-semibold text-base">
               เข้าสู่ระบบผู้ดูแล (Admin)
             </h3>
@@ -63,7 +63,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="text-white/75 hover:text-white p-1 rounded-lg transition-colors"
+            className="text-white/80 hover:text-white p-1 rounded-lg transition-colors"
             aria-label="ปิดหน้าต่าง"
           >
             <X className="w-4 h-4" />
@@ -86,7 +86,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="ระบุชื่อผู้ใช้ (เช่น Admin)"
-              className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-300 dark:border-[#263850] rounded-lg py-2 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] focus:ring-2 focus:ring-[#2271B3]/20"
+              className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1E3350] rounded-lg py-2 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#0F1E33] focus:border-[#0F62BD] dark:focus:border-[#4EA3FF] focus:ring-2 focus:ring-[#0F62BD]/20"
             />
           </div>
 
@@ -100,7 +100,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="ระบุรหัสผ่าน"
-              className="w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-300 dark:border-[#263850] rounded-lg py-2 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#162336] focus:border-[#2271B3] dark:focus:border-[#5EA6E0] focus:ring-2 focus:ring-[#2271B3]/20"
+              className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1E3350] rounded-lg py-2 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#0F1E33] focus:border-[#0F62BD] dark:focus:border-[#4EA3FF] focus:ring-2 focus:ring-[#0F62BD]/20"
             />
           </div>
 
@@ -114,13 +114,13 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-[#0F1826] border border-slate-300 dark:border-[#263850] rounded-lg hover:bg-slate-50 dark:hover:bg-[#162336] transition-colors"
+              className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-lg hover:bg-[#EDF5FD] dark:hover:bg-[#15253D] transition-colors"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-white bg-[#0B4DA2] hover:bg-[#083A7E] dark:bg-[#2B7CD3] dark:hover:bg-[#1F69BC] rounded-lg transition-colors shadow-xs"
             >
               เข้าสู่ระบบ
             </button>

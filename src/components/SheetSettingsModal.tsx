@@ -397,29 +397,29 @@ export const SheetSettingsModal: React.FC<SheetSettingsModalProps> = ({
   };
 
   const modalInputCls =
-    'w-full bg-white dark:bg-[#0F1826] border border-slate-300 dark:border-[#263850] rounded-lg py-2 px-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#2271B3] dark:focus:border-[#5EA6E0] focus:ring-2 focus:ring-[#2271B3]/20 transition-colors';
+    'w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1E3350] rounded-lg py-2 px-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:bg-white dark:focus:bg-[#0F1E33] focus:border-[#0F62BD] dark:focus:border-[#4EA3FF] focus:ring-2 focus:ring-[#0F62BD]/20 transition-colors';
 
   return (
     <div
-      className="fixed inset-0 z-[2400] flex items-center justify-center bg-slate-900/60 dark:bg-black/70 backdrop-blur-[2px] p-4"
+      className="fixed inset-0 z-[2400] flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-[2px] p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="sheet-settings-title"
     >
-      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl w-full max-w-xl shadow-xl overflow-hidden max-h-[92vh] flex flex-col">
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-[#213145] flex items-center justify-between shrink-0">
+      <div className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl w-full max-w-xl shadow-xl overflow-hidden max-h-[92vh] flex flex-col">
+        <div className="px-5 py-4 border-b border-[#0A3A82] dark:border-[#1D3350] bg-gradient-to-r from-[#0A3A82] to-[#0F62BD] dark:from-[#0C254B] dark:to-[#133B70] text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
+            <span className="w-8 h-8 rounded-lg bg-white/15 border border-white/20 text-white flex items-center justify-center shrink-0">
               <Database className="w-4 h-4" />
             </span>
-            <h3 id="sheet-settings-title" className="font-semibold text-slate-900 dark:text-slate-100 text-base">
+            <h3 id="sheet-settings-title" className="font-semibold text-white text-base">
               ตั้งค่าการเชื่อมโยง AppSheet / Google Sheets
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors"
+            className="text-white/80 hover:text-white p-1 rounded-lg transition-colors"
             aria-label="ปิดหน้าต่าง"
           >
             <X className="w-4 h-4" />
@@ -690,7 +690,7 @@ export const SheetSettingsModal: React.FC<SheetSettingsModalProps> = ({
             )}
           </div>
 
-          <div className="bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#213145] rounded-lg p-3 space-y-2">
+          <div className="bg-[#F4F8FD] dark:bg-[#0A1424] border border-[#DCE6F3] dark:border-[#1D3350] rounded-xl p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
                 หรือยืนยันสิทธิ์ด้วยบัญชี Google ของเจ้าของชีท (ทางเลือก)
@@ -727,13 +727,13 @@ export const SheetSettingsModal: React.FC<SheetSettingsModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-[#0F1826] border border-slate-300 dark:border-[#263850] rounded-lg hover:bg-slate-50 dark:hover:bg-[#162336] transition-colors"
+              className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-lg hover:bg-[#EDF5FD] dark:hover:bg-[#15253D] transition-colors"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-white bg-[#0B4DA2] hover:bg-[#083A7E] dark:bg-[#2B7CD3] dark:hover:bg-[#1F69BC] rounded-lg transition-colors shadow-xs"
             >
               บันทึกการตั้งค่า
             </button>

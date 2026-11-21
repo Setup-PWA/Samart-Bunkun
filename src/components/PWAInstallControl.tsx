@@ -51,9 +51,9 @@ export const PWAInstallControl: React.FC = () => {
         type="button"
         onClick={handleAction}
         title="ติดตั้งแอปและทางลัดบน Chrome / มือถือ"
-        className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-slate-100 dark:bg-[#0F1826] hover:bg-[#EDF5FC] dark:hover:bg-[#162336] border border-slate-200 dark:border-[#263850] text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
+        className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white/15 hover:bg-white/25 dark:bg-[#081529]/60 dark:hover:bg-[#102648] border border-white/25 dark:border-[#244A7A] text-white rounded-lg text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
       >
-        <Download className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
+        <Download className="w-3.5 h-3.5 text-sky-200 dark:text-[#7CC4FF]" />
         <span className="hidden sm:inline">
           {isInstallable ? 'ติดตั้งแอป Chrome' : 'ติดตั้ง / ทางลัด'}
         </span>
@@ -66,15 +66,15 @@ export const PWAInstallControl: React.FC = () => {
           aria-modal="true"
           aria-labelledby="pwa-install-title"
         >
-          <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl w-full max-w-md shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="px-5 py-3.5 border-b border-slate-200 dark:border-[#213145] flex items-center justify-between gap-2 shrink-0">
+          <div className="bg-white dark:bg-[#0F1B2E] border border-[#DCE6F3] dark:border-[#1D3350] rounded-2xl w-full max-w-md shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="px-5 py-3.5 border-b border-[#DCE6F3] dark:border-[#1D3350] bg-gradient-to-r from-[#0A3A82] to-[#0F62BD] dark:from-[#0C254B] dark:to-[#133B70] text-white flex items-center justify-between gap-2 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="w-8 h-8 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
+                <span className="w-8 h-8 rounded-lg bg-white/15 text-white flex items-center justify-center shrink-0">
                   <Download className="w-4 h-4" />
                 </span>
                 <h3
                   id="pwa-install-title"
-                  className="font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate"
+                  className="font-semibold text-sm sm:text-base text-white truncate"
                 >
                   ติดตั้งแอปและสร้างทางลัด Chrome
                 </h3>
@@ -82,7 +82,7 @@ export const PWAInstallControl: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowGuideModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#162336]"
+                className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/15"
                 aria-label="ปิดหน้าต่าง"
               >
                 <X className="w-4 h-4" />
