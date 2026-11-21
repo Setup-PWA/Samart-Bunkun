@@ -117,7 +117,18 @@ export const FallbackLeafletMap: React.FC<FallbackLeafletMapProps> = ({
 
     mapRef.current = map;
 
+    const ro =
+      typeof ResizeObserver !== 'undefined' && containerRef.current
+        ? new ResizeObserver(() => {
+            map.invalidateSize();
+          })
+        : null;
+    if (ro && containerRef.current) {
+      ro.observe(containerRef.current);
+    }
+
     return () => {
+      ro?.disconnect();
       map.remove();
       mapRef.current = null;
     };
@@ -418,7 +429,7 @@ export const FallbackLeafletMap: React.FC<FallbackLeafletMapProps> = ({
   return (
     <div className="relative w-full h-full">
       {/* Floating Place / Coordinate Search */}
-      <div className="absolute top-3 left-3 right-3 sm:right-auto sm:w-80 z-[500]">
+      <div className="absolute top-2.5 left-2.5 right-2.5 sm:right-auto sm:w-72 md:w-80 z-[500]">
         <form
           onSubmit={handleSearchSubmit}
           className="flex items-center bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#263850] rounded-lg shadow-md overflow-hidden"
@@ -479,8 +490,8 @@ export const FallbackLeafletMap: React.FC<FallbackLeafletMapProps> = ({
       {selectedPopupRecord &&
         selectedPopupRecord.latitude !== null &&
         selectedPopupRecord.longitude !== null && (
-          <div className="absolute bottom-4 left-3 right-3 sm:right-auto sm:w-80 bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#263850] rounded-xl shadow-xl z-[500] p-4 space-y-2.5 text-xs">
-            <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-[#1B2B40] pb-2">
+          <div className="absolute bottom-2.5 left-2.5 right-12 sm:right-auto sm:w-80 max-h-[calc(100%-56px)] overflow-y-auto bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#263850] rounded-xl shadow-xl z-[500] p-3 sm:p-4 space-y-2 text-xs">
+            <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-[#1B2B40] pb-1.5">
               <div>
                 <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
                   {selectedPopupRecord.fullName || 'ไม่ระบุชื่อ'}
@@ -552,7 +563,7 @@ export const FallbackLeafletMap: React.FC<FallbackLeafletMapProps> = ({
                     ? `รูปหน้าบ้าน ${selectedPopupRecord.fullName}`
                     : 'รูปหน้าบ้าน'
                 }
-                heightClass="h-32"
+                heightClass="h-24 sm:h-28"
               />
             </div>
 

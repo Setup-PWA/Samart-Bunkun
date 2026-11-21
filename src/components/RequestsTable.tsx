@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   BarChart2,
   Banknote,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   ExternalLink,
   FileSpreadsheet,
@@ -46,6 +48,8 @@ interface RequestsTableProps {
   ) => void;
 }
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+
 export const RequestsTable: React.FC<RequestsTableProps> = ({
   records,
   totalCount,
@@ -63,8 +67,46 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
   const [exportScope, setExportScope] = useState<ExportScope>('all');
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null);
   const [showSummaryStrip, setShowSummaryStrip] = useState(true);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const analytics = useMemo(() => computeExportAnalytics(records), [records]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    pageSize,
+    searchQuery,
+    filterContext.status,
+    filterContext.location,
+    filterContext.month,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(records.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, records.length);
+
+  const paginatedRecords = useMemo(
+    () => records.slice(startIndex, startIndex + pageSize),
+    [records, startIndex, pageSize]
+  );
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: Array<number | 'ellipsis-left' | 'ellipsis-right'> = [1];
+    const left = Math.max(2, safeCurrentPage - 1);
+    const right = Math.min(totalPages - 1, safeCurrentPage + 1);
+    if (left > 2) pages.push('ellipsis-left');
+    for (let p = left; p <= right; p += 1) {
+      pages.push(p);
+    }
+    if (right < totalPages - 1) pages.push('ellipsis-right');
+    pages.push(totalPages);
+    return pages;
+  }, [totalPages, safeCurrentPage]);
   const activeFilterText = useMemo(
     () => describeActiveFilters(filterContext),
     [filterContext]
@@ -130,30 +172,30 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
       }
     >
       {/* Header & Search + Export Toolbar */}
-      <div className="px-5 py-4 border-b border-slate-200 dark:border-[#213145] flex flex-col xl:flex-row xl:items-center justify-between gap-3.5">
+      <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 dark:border-[#213145] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-2.5 min-w-0">
           <span className="w-8 h-8 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
             <ListChecks className="w-4 h-4" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100">
               รายการคำขอติดตั้ง / ย้ายมาตรวัดน้ำ
             </h2>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
               <span className="tabular-nums">
                 แสดง {records.length.toLocaleString('th-TH')} จากทั้งหมด{' '}
                 {totalCount.toLocaleString('th-TH')} รายการ
               </span>
               <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">·</span>
-              <span className="text-[#2271B3] dark:text-[#5EA6E0] font-medium truncate max-w-[360px]">
+              <span className="text-[#2271B3] dark:text-[#5EA6E0] font-medium truncate max-w-full sm:max-w-[360px]">
                 {activeFilterText}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 sm:flex-none sm:w-64">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
+          <div className="relative w-full sm:w-56 md:w-64">
             <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5 pointer-events-none" />
             <input
               type="text"
@@ -168,7 +210,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
             aria-label="เลือกรูปแบบส่วนข้อมูลสำหรับส่งออก"
             value={exportScope}
             onChange={(e) => setExportScope(e.target.value as ExportScope)}
-            className="bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
+            className="w-full sm:w-auto max-w-full bg-slate-50 dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] rounded-lg py-2 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none focus:border-[#2271B3] dark:focus:border-[#5EA6E0] transition-colors"
           >
             <option value="all">ทั้งหมด (แดชบอร์ด + ตาราง)</option>
             <option value="by_status">แยกตามสถานะคำขอ</option>
@@ -180,7 +222,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
             onClick={handleExportExcel}
             disabled={records.length === 0 || isExporting !== null}
             title="ส่งออกรายการที่กรองพร้อมภาพแดชบอร์ดสรุปเป็น Excel (.xlsx)"
-            className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
+            className="px-2.5 sm:px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             {isExporting === 'excel' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -195,7 +237,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
             onClick={handleExportPdf}
             disabled={records.length === 0 || isExporting !== null}
             title="ส่งออกรายการที่กรองพร้อมภาพแดชบอร์ดสรุปเป็น PDF (.pdf)"
-            className="px-3 py-2 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
+            className="px-2.5 sm:px-3 py-2 bg-[#2271B3] hover:bg-[#1A5A8F] dark:bg-[#3584C7] dark:hover:bg-[#2271B3] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-xs transition-colors inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             {isExporting === 'pdf' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -224,7 +266,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
 
       {/* Inline Visual Summary Dashboard inside Table Section */}
       {showSummaryStrip && (
-        <div className="bg-[#F8FAFD] dark:bg-[#0D1724] border-b border-slate-200 dark:border-[#213145] p-4 sm:p-5 space-y-4 transition-colors">
+        <div className="bg-[#F8FAFD] dark:bg-[#0D1724] border-b border-slate-200 dark:border-[#213145] p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 transition-colors">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-4 rounded-full bg-[#2271B3] dark:bg-[#5EA6E0]" />
@@ -457,7 +499,7 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
                 </td>
               </tr>
             ) : (
-              records.map((rec) => {
+              paginatedRecords.map((rec) => {
                 const statusMeta = getStatusMeta(rec.status);
                 const coordsStr = formatLatLngString(rec.latitude, rec.longitude);
 
@@ -598,6 +640,106 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
           )}
         </table>
       </div>
+
+      {/* Pagination Bar (10 / 20 / 50 / 100 rows per page) */}
+      {records.length > 0 && (
+        <div className="px-3.5 sm:px-5 py-3 bg-[#F8FAFD] dark:bg-[#0D1724] border-t border-slate-200 dark:border-[#213145] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span className="text-slate-600 dark:text-slate-300 tabular-nums">
+              แสดง{' '}
+              <strong className="text-slate-900 dark:text-slate-100">
+                {(startIndex + 1).toLocaleString('th-TH')}–{endIndex.toLocaleString('th-TH')}
+              </strong>{' '}
+              จาก{' '}
+              <strong className="text-slate-900 dark:text-slate-100">
+                {records.length.toLocaleString('th-TH')}
+              </strong>{' '}
+              รายการ
+            </span>
+
+            <div className="inline-flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                แสดงต่อหน้า:
+              </span>
+              <div
+                role="group"
+                aria-label="จำนวนรายการต่อหน้า"
+                className="inline-flex items-center bg-white dark:bg-[#0F1826] p-0.5 rounded-lg border border-slate-200 dark:border-[#263850]"
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => {
+                  const active = pageSize === size;
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setPageSize(size)}
+                      aria-pressed={active}
+                      className={`px-2 sm:px-2.5 py-1 rounded-md text-[11px] font-semibold tabular-nums transition-colors ${
+                        active
+                          ? 'bg-[#2271B3] dark:bg-[#3584C7] text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#162336]'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, Math.min(p, totalPages) - 1))}
+              disabled={safeCurrentPage <= 1}
+              aria-label="หน้าก่อนหน้า"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#263850] bg-white dark:bg-[#0F1826] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#162336] disabled:opacity-45 disabled:cursor-not-allowed inline-flex items-center gap-1 font-medium transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>ก่อนหน้า</span>
+            </button>
+
+            <div className="inline-flex items-center gap-1">
+              {pageNumbers.map((item) =>
+                typeof item === 'number' ? (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setCurrentPage(item)}
+                    aria-current={item === safeCurrentPage ? 'page' : undefined}
+                    className={`min-w-[30px] h-7 px-2 rounded-lg text-[11px] font-semibold tabular-nums border transition-colors ${
+                      item === safeCurrentPage
+                        ? 'bg-[#2271B3] dark:bg-[#3584C7] border-[#2271B3] dark:border-[#3584C7] text-white shadow-xs'
+                        : 'bg-white dark:bg-[#0F1826] border-slate-200 dark:border-[#263850] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#162336]'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ) : (
+                  <span
+                    key={item}
+                    className="px-1 text-slate-400 dark:text-slate-500 select-none"
+                  >
+                    ...
+                  </span>
+                )
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, Math.min(p, totalPages) + 1))}
+              disabled={safeCurrentPage >= totalPages}
+              aria-label="หน้าถัดไป"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#263850] bg-white dark:bg-[#0F1826] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#162336] disabled:opacity-45 disabled:cursor-not-allowed inline-flex items-center gap-1 font-medium transition-colors"
+            >
+              <span>ถัดไป</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

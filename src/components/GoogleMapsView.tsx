@@ -198,7 +198,7 @@ const GooglePlacesSearchControl: React.FC<GoogleSearchBoxProps> = ({
   };
 
   return (
-    <div className="absolute top-3 left-3 right-3 sm:right-auto sm:w-80 z-20">
+    <div className="absolute top-2.5 left-2.5 right-14 sm:right-auto sm:w-72 md:w-80 z-20">
       <form
         onSubmit={handleSubmit}
         className="flex items-center bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#263850] rounded-lg shadow-md overflow-hidden"
@@ -609,7 +609,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
                   onSelectRecord(null);
                 }}
               >
-                <div className="p-1 min-w-[240px] max-w-[280px] space-y-2 text-xs text-black">
+                <div className="p-1 min-w-[205px] max-w-[245px] sm:max-w-[280px] max-h-[210px] sm:max-h-[260px] overflow-y-auto space-y-2 text-xs text-black">
                   <div className="border-b border-slate-200 pb-1.5">
                     <p className="font-bold text-sm text-black">
                       {activeRecord.fullName || 'ไม่ระบุชื่อ'}
@@ -668,7 +668,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
                           : 'รูปหน้าบ้าน'
                       }
                       lightSurface
-                      heightClass="h-32"
+                      heightClass="h-24 sm:h-28"
                     />
                   </div>
 

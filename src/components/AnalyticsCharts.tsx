@@ -76,16 +76,16 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   return (
     <section
       id="analytics-section"
-      className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+      className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
     >
       {/* Status Breakdown Donut */}
-      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-5 transition-colors">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-4 sm:p-5 min-w-0 transition-colors">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2 min-w-0">
             <span className="w-7 h-7 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
               <PieChart className="w-4 h-4" />
             </span>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
               สัดส่วนความคืบหน้าและสถานะคำขอ
             </h3>
           </div>
@@ -93,7 +93,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
             <button
               type="button"
               onClick={() => onFilterByStatus('')}
-              className="text-xs text-[#2271B3] dark:text-[#5EA6E0] hover:underline font-medium"
+              className="text-xs text-[#2271B3] dark:text-[#5EA6E0] hover:underline font-medium shrink-0"
             >
               แสดงทั้งหมด
             </button>
@@ -101,12 +101,12 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         </div>
 
         {records.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="h-44 sm:h-52 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
             ยังไม่มีข้อมูลสำหรับแสดงสัดส่วนสถานะ
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative w-40 h-40 shrink-0">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 shrink-0">
               <svg viewBox="0 0 150 150" className="w-full h-full -rotate-90">
                 <circle
                   cx="75"
@@ -201,23 +201,23 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       </div>
 
       {/* Subdistrict / Area Horizontal Bar Chart */}
-      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-5 transition-colors">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+      <div className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl p-4 sm:p-5 min-w-0 transition-colors">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2 min-w-0">
             <span className="w-7 h-7 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
               <BarChart3 className="w-4 h-4" />
             </span>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
               ปริมาณคำขอแยกตามตำบล / พื้นที่ (สูงสุด 8 อันดับ)
             </h3>
           </div>
-          <span className="text-xs text-slate-400 dark:text-slate-500 tabular-nums">
+          <span className="text-xs text-slate-400 dark:text-slate-500 tabular-nums shrink-0">
             {areaBreakdown.length} พื้นที่
           </span>
         </div>
 
         {areaBreakdown.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="h-44 sm:h-52 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
             ยังไม่มีข้อมูลพื้นที่สำหรับแสดงกราฟ
           </div>
         ) : (

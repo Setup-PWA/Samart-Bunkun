@@ -6,7 +6,9 @@ import {
   LocateFixed,
   MapPin,
   Maximize2,
+  Minimize2,
   Navigation,
+  Scan,
   X,
 } from 'lucide-react';
 import { MapLayerType, MeterRequest, RouteSummary } from '../types/meter';
@@ -64,6 +66,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
     lng: number;
   } | null>(null);
   const [fitAllTrigger, setFitAllTrigger] = useState(0);
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
 
   const handleRouteComputed = useCallback(
     (summary: RouteSummary | null, error?: string) => {
@@ -91,35 +94,35 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
   return (
     <section
       id="map-section"
-      className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden flex flex-col transition-colors"
+      className="bg-white dark:bg-[#111C2B] border border-slate-200 dark:border-[#213145] rounded-xl overflow-hidden flex flex-col transition-colors min-w-0"
     >
       {/* Map Toolbar Header */}
-      <div className="px-4 py-3 border-b border-slate-200 dark:border-[#213145] flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#111C2B]">
-        <div className="flex items-center gap-2.5">
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-200 dark:border-[#213145] flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 bg-white dark:bg-[#111C2B]">
+        <div className="flex items-center gap-2.5 min-w-0">
           <span className="w-7 h-7 rounded-lg bg-[#EDF5FC] dark:bg-[#2271B3]/20 text-[#2271B3] dark:text-[#5EA6E0] flex items-center justify-center shrink-0">
             <MapPin className="w-4 h-4" />
           </span>
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <div className="min-w-0">
+            <h2 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
               แผนที่พิกัดคำขอติดตั้ง/ย้ายมาตรวัดน้ำ
             </h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-              แสดงตำแหน่งที่มีพิกัด {validCoordsCount} จากทั้งหมด {records.length} รายการ
-              {isAdmin ? ' · คลิกบนแผนที่เพื่อปักหมุดคำขอ' : ''}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums truncate">
+              มีพิกัด {validCoordsCount} / {records.length} รายการ
+              {isAdmin ? ' · คลิกบนแผนที่เพื่อปักหมุด' : ''}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {/* Layer Switcher (Roadmap / Satellite / Hybrid / Terrain) */}
           <div className="inline-flex items-center bg-slate-100 dark:bg-[#0F1826] p-0.5 rounded-lg border border-slate-200 dark:border-[#263850]">
-            <Layers className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 mx-2 hidden sm:block" />
+            <Layers className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 mx-1.5 hidden md:block" />
             {LAYER_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
                 onClick={() => setLayerType(opt.id)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                className={`px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                   layerType === opt.id
                     ? 'bg-[#2271B3] dark:bg-[#3584C7] text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -133,7 +136,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           <button
             type="button"
             onClick={onLocateUser}
-            className="px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
           >
             <LocateFixed className="w-3.5 h-3.5 text-[#2271B3] dark:text-[#5EA6E0]" />
             <span>ตำแหน่งฉัน</span>
@@ -142,17 +145,36 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
           <button
             type="button"
             onClick={() => setFitAllTrigger((c) => c + 1)}
-            className="px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
           >
-            <Maximize2 className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+            <Scan className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
             <span>ดูทั้งหมด</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsMapExpanded((prev) => !prev)}
+            title={isMapExpanded ? 'ย่อขนาดแผนที่' : 'ขยายขนาดแผนที่'}
+            className="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#0F1826] border border-slate-200 dark:border-[#263850] hover:bg-slate-50 dark:hover:bg-[#162336] text-slate-700 dark:text-slate-200 rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+          >
+            {isMapExpanded ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                <span>ย่อแผนที่</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                <span>ขยายแผนที่</span>
+              </>
+            )}
           </button>
 
           {streetViewTarget && (
             <button
               type="button"
               onClick={() => setStreetViewTarget(null)}
-              className="px-3 py-1.5 bg-[#2271B3] hover:bg-[#1A5A8F] text-white rounded-lg text-xs font-medium inline-flex items-center gap-1.5 whitespace-nowrap"
+              className="px-2.5 sm:px-3 py-1.5 bg-[#2271B3] hover:bg-[#1A5A8F] text-white rounded-lg text-[11px] sm:text-xs font-medium inline-flex items-center gap-1 whitespace-nowrap"
             >
               <Compass className="w-3.5 h-3.5" />
               <span>ออกจาก Street View</span>
@@ -163,9 +185,9 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
       {/* Non-blocking info notice when Google Maps Platform key hasn't been configured yet (Admin Only) */}
       {isAdmin && !mapsApiKey && (
-        <div className="px-4 py-2 bg-[#EDF5FC] dark:bg-[#16283D] border-b border-[#D6E7F6] dark:border-[#234161] text-[11px] text-[#1A5A8F] dark:text-[#A9D1F2] flex flex-wrap items-center justify-between gap-2">
-          <span>
-            กำลังแสดงแผนที่โหมดมาตรฐาน (ดาวเทียม / ไฮบริด / ถนน / ค้นหาสถานที่) — หากต้องการเปิดใช้ Google Maps เต็มรูปแบบ (Places Autocomplete, Routes API, Street View ในหน้าจอ) สามารถตั้งค่า API Key ได้ที่แผงตั้งค่า Google Maps
+        <div className="px-3 sm:px-4 py-2 bg-[#EDF5FC] dark:bg-[#16283D] border-b border-[#D6E7F6] dark:border-[#234161] text-[11px] text-[#1A5A8F] dark:text-[#A9D1F2] flex flex-wrap items-center justify-between gap-2">
+          <span className="leading-relaxed">
+            กำลังแสดงแผนที่โหมดมาตรฐาน (ดาวเทียม / ไฮบริด / ถนน / ค้นหาสถานที่)
           </span>
           {selectedRecord?.latitude && selectedRecord?.longitude && (
             <a
@@ -183,15 +205,15 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
 
       {/* Active Route Banner */}
       {(routeSummary || routeError) && (
-        <div className="px-4 py-2.5 bg-[#173A58] dark:bg-[#0D1E31] text-white text-xs flex flex-wrap items-center justify-between gap-3 border-b border-[#2271B3]/40">
+        <div className="px-3 sm:px-4 py-2 bg-[#173A58] dark:bg-[#0D1E31] text-white text-xs flex flex-wrap items-center justify-between gap-2.5 border-b border-[#2271B3]/40">
           {routeSummary ? (
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="inline-flex items-center gap-1.5 font-semibold text-[#8CC5F2]">
                 <Navigation className="w-3.5 h-3.5" />
-                <span>เส้นทางไปยัง: {routeSummary.destinationName}</span>
+                <span>เส้นทาง: {routeSummary.destinationName}</span>
               </span>
-              <span className="font-mono tabular-nums text-slate-200">
-                ระยะทาง {(routeSummary.distanceMeters / 1000).toFixed(2)} กม. · เวลาประมาณ{' '}
+              <span className="font-mono tabular-nums text-slate-200 text-[11px]">
+                {(routeSummary.distanceMeters / 1000).toFixed(2)} กม. · ~
                 {Math.max(1, Math.round(routeSummary.durationMillis / 60000))} นาที
                 {routeSummary.isEstimate ? ' (ประมาณการ)' : ''}
               </span>
@@ -199,9 +221,9 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
                 href={`https://www.google.com/maps/dir/?api=1&destination=${routeSummary.destinationLat},${routeSummary.destinationLng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#8CC5F2] hover:text-white underline inline-flex items-center gap-1"
+                className="text-[#8CC5F2] hover:text-white underline inline-flex items-center gap-1 text-[11px]"
               >
-                <span>นำทางแบบ Turn-by-Turn</span>
+                <span>นำทาง Turn-by-Turn</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
@@ -216,7 +238,7 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
               setRouteSummary(null);
               setRouteError('');
             }}
-            className="text-slate-300 hover:text-white inline-flex items-center gap-1"
+            className="text-slate-300 hover:text-white inline-flex items-center gap-1 text-[11px]"
           >
             <X className="w-3.5 h-3.5" />
             <span>ปิดเส้นทาง</span>
@@ -224,8 +246,14 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Map Viewport (explicit height prevents 0x0 collapse) */}
-      <div className="w-full h-[540px] relative bg-slate-100 dark:bg-[#0F1826]">
+      {/* Map Viewport (restored original height with optional expand toggle) */}
+      <div
+        className={`w-full relative bg-slate-100 dark:bg-[#0F1826] transition-[height] duration-200 ${
+          isMapExpanded
+            ? 'h-[500px] sm:h-[580px] lg:h-[640px]'
+            : 'h-[400px] sm:h-[480px] lg:h-[520px]'
+        }`}
+      >
         {mapsApiKey ? (
           <GoogleMapsView
             apiKey={mapsApiKey}
@@ -268,8 +296,8 @@ export const MapWorkspace: React.FC<MapWorkspaceProps> = ({
       </div>
 
       {/* Legend Bar */}
-      <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0F1826] border-t border-slate-200 dark:border-[#213145] flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-        <span className="font-semibold text-slate-700 dark:text-slate-200">สัญลักษณ์สถานะ:</span>
+      <div className="px-3 sm:px-4 py-2 bg-slate-50 dark:bg-[#0F1826] border-t border-slate-200 dark:border-[#213145] flex flex-wrap items-center gap-x-3.5 sm:gap-x-5 gap-y-1 text-[11px] sm:text-xs text-slate-600 dark:text-slate-300">
+        <span className="font-semibold text-slate-700 dark:text-slate-200">สัญลักษณ์:</span>
         {LEGEND_ITEMS.map((item) => (
           <span key={item.label} className="inline-flex items-center gap-1.5">
             <span
