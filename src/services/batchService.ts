@@ -29,6 +29,7 @@ export interface BatchRecordEditableFields {
   jobNumber?: string;
   waterUserNo?: string;
   meterNumber?: string;
+  meterSize?: string;
   houseNo?: string;
   price?: string;
   note?: string;
@@ -108,6 +109,7 @@ export function toBatchRecords(
     const rawJob = r.raw?.['เลขที่ งาน'] || r.raw?.['เลขที่งาน'] || r.rqNumber || '';
     const rawUserNo = r.raw?.['เลขที่ผู้ใช้น้ำ'] || r.raw?.['เลขที่ผู้ใช้น้ำประปา'] || '';
     const rawMeterNo = r.raw?.['หมายเลขมาตร'] || r.raw?.['เลขมาตร'] || '';
+    const rawMeterSize = r.raw?.['ขนาดมาตร'] || r.raw?.['ขนาด'] || '';
     const parsedOverridePrice =
       ov?.price !== undefined ? Number.parseFloat(String(ov.price).replace(/,/g, '')) : NaN;
     const finalPrice =
@@ -125,6 +127,7 @@ export function toBatchRecords(
       jobNumber: ov?.jobNumber !== undefined ? ov.jobNumber : rawJob,
       waterUserNo: ov?.waterUserNo !== undefined ? ov.waterUserNo : rawUserNo,
       meterNumber: ov?.meterNumber !== undefined ? ov.meterNumber : rawMeterNo,
+      meterSize: ov?.meterSize !== undefined ? ov.meterSize : rawMeterSize,
       requestDate: r.requestDate,
       fullName: r.fullName,
       houseNo: ov?.houseNo !== undefined ? ov.houseNo : r.houseNo,
@@ -188,6 +191,8 @@ export interface SaveBatchInput {
   note: string;
   exportFormats: Array<'excel' | 'pdf'>;
   statusUpdatedInSheet: boolean;
+  includeTax?: boolean;
+  memoSigners?: CompletedBatch['memoSigners'];
   records: CompletedBatchRecord[];
   appsScriptUrl?: string;
 }
@@ -212,6 +217,8 @@ export async function saveCompletedBatch(
     note: input.note,
     exportFormats: input.exportFormats,
     statusUpdatedInSheet: input.statusUpdatedInSheet,
+    includeTax: input.includeTax ?? true,
+    memoSigners: input.memoSigners,
     recordCount: input.records.length,
     totalAmount,
     mappedCount,

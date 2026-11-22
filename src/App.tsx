@@ -159,8 +159,12 @@ export default function App() {
 
   // Filters
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterLocation, setFilterLocation] = useState('');
-  const [filterMonth, setFilterMonth] = useState('');
+  const [filterMoo, setFilterMoo] = useState('');
+  const [filterSubdistrict, setFilterSubdistrict] = useState('');
+  const [filterDistrict, setFilterDistrict] = useState('');
+  const [filterProvince, setFilterProvince] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Map & Admin Form Interaction states
@@ -521,23 +525,63 @@ export default function App() {
     }
   };
 
+  const extractAreaParts = useCallback((rec: MeterRequest) => {
+    const rawProvince = (rec.province || '').trim() || (rec.locationSummary?.match(/จ\.([^\s(]+)/)?.[1] ? `จ.${rec.locationSummary.match(/จ\.([^\s(]+)/)![1]}` : '');
+    const rawDistrict = (rec.district || '').trim() || (rec.locationSummary?.match(/อ\.([^\s]+)/)?.[1] ? `อ.${rec.locationSummary.match(/อ\.([^\s]+)/)![1]}` : '');
+    const rawSubdistrict = (rec.subdistrict || '').trim() || (rec.locationSummary?.match(/ต\.([^\s]+)/)?.[1] ? `ต.${rec.locationSummary.match(/ต\.([^\s]+)/)![1]}` : '');
+    const rawMoo = (rec.moo || '').trim();
+
+    const province = rawProvince ? (rawProvince.startsWith('จ.') ? rawProvince : `จ.${rawProvince}`) : '';
+    const district = rawDistrict ? (rawDistrict.startsWith('อ.') ? rawDistrict : `อ.${rawDistrict}`) : '';
+    const subdistrict = rawSubdistrict ? (rawSubdistrict.startsWith('ต.') ? rawSubdistrict : `ต.${rawSubdistrict}`) : '';
+    const moo = rawMoo.replace(/^(?:หมู่ที่|หมู่|ม\.)\s*/i, '').trim();
+
+    return { moo, subdistrict, district, province };
+  }, []);
+
+  const extractIsoDate = useCallback((rawDate: string): string => {
+    const s = (rawDate || '').trim();
+    if (!s) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const dmy = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (dmy) {
+      const day = dmy[1].padStart(2, '0');
+      const month = dmy[2].padStart(2, '0');
+      let year = Number.parseInt(dmy[3], 10);
+      if (year > 2400) year -= 543;
+      return `${year}-${month}-${day}`;
+    }
+    const parsed = new Date(s);
+    if (!Number.isNaN(parsed.getTime())) {
+      const y = parsed.getFullYear();
+      const m = String(parsed.getMonth() + 1).padStart(2, '0');
+      const d = String(parsed.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    return '';
+  }, []);
+
   // Filtered records
   const filteredRecords = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return records.filter((rec) => {
       const matchStatus = !filterStatus || rec.status === filterStatus;
-      const matchLocation =
-        !filterLocation || rec.locationSummary === filterLocation;
 
-      let matchMonth = true;
-      if (filterMonth && rec.requestDate) {
-        const d = new Date(rec.requestDate);
-        if (!Number.isNaN(d.getTime())) {
-          const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-          matchMonth = ym === filterMonth;
+      const area = extractAreaParts(rec);
+      const matchProvince = !filterProvince || area.province === filterProvince;
+      const matchDistrict = !filterDistrict || area.district === filterDistrict;
+      const matchSubdistrict = !filterSubdistrict || area.subdistrict === filterSubdistrict;
+      const matchMoo = !filterMoo || area.moo === filterMoo;
+
+      let matchDate = true;
+      if (filterDateFrom || filterDateTo) {
+        const recIso = extractIsoDate(rec.requestDate);
+        if (!recIso) {
+          matchDate = false;
+        } else {
+          if (filterDateFrom && recIso < filterDateFrom) matchDate = false;
+          if (filterDateTo && recIso > filterDateTo) matchDate = false;
         }
-      } else if (filterMonth && !rec.requestDate) {
-        matchMonth = false;
       }
 
       let matchQuery = true;
@@ -550,9 +594,29 @@ export default function App() {
           rec.moo.toLowerCase().includes(q);
       }
 
-      return matchStatus && matchLocation && matchMonth && matchQuery;
+      return (
+        matchStatus &&
+        matchProvince &&
+        matchDistrict &&
+        matchSubdistrict &&
+        matchMoo &&
+        matchDate &&
+        matchQuery
+      );
     });
-  }, [records, filterStatus, filterLocation, filterMonth, searchQuery]);
+  }, [
+    records,
+    filterStatus,
+    filterProvince,
+    filterDistrict,
+    filterSubdistrict,
+    filterMoo,
+    filterDateFrom,
+    filterDateTo,
+    searchQuery,
+    extractAreaParts,
+    extractIsoDate,
+  ]);
 
   // Dynamic filter dropdown options derived from real Sheet data
   const statusOptions = useMemo(() => {
@@ -570,13 +634,49 @@ export default function App() {
     return Array.from(extras);
   }, [records]);
 
-  const locationOptions = useMemo(() => {
-    const set = new Set<string>();
+  const { provinceOptions, districtOptions, subdistrictOptions, mooOptions } = useMemo(() => {
+    const provinces = new Set<string>();
+    const districts = new Set<string>();
+    const subdistricts = new Set<string>();
+    const moos = new Set<string>();
+
     records.forEach((r) => {
-      if (r.locationSummary) set.add(r.locationSummary);
+      const area = extractAreaParts(r);
+      if (area.province) provinces.add(area.province);
+      if (area.district && (!filterProvince || area.province === filterProvince)) {
+        districts.add(area.district);
+      }
+      if (
+        area.subdistrict &&
+        (!filterProvince || area.province === filterProvince) &&
+        (!filterDistrict || area.district === filterDistrict)
+      ) {
+        subdistricts.add(area.subdistrict);
+      }
+      if (
+        area.moo &&
+        (!filterProvince || area.province === filterProvince) &&
+        (!filterDistrict || area.district === filterDistrict) &&
+        (!filterSubdistrict || area.subdistrict === filterSubdistrict)
+      ) {
+        moos.add(area.moo);
+      }
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'th'));
-  }, [records]);
+
+    return {
+      provinceOptions: Array.from(provinces).sort((a, b) => a.localeCompare(b, 'th')),
+      districtOptions: Array.from(districts).sort((a, b) => a.localeCompare(b, 'th')),
+      subdistrictOptions: Array.from(subdistricts).sort((a, b) => a.localeCompare(b, 'th')),
+      mooOptions: Array.from(moos).sort((a, b) => {
+        const na = Number.parseInt(a, 10);
+        const nb = Number.parseInt(b, 10);
+        if (!Number.isNaN(na) && !Number.isNaN(nb) && String(na) === a && String(nb) === b) {
+          return na - nb;
+        }
+        return a.localeCompare(b, 'th');
+      }),
+    };
+  }, [records, filterProvince, filterDistrict, filterSubdistrict, extractAreaParts]);
 
   const completedEligibleUnbatchedCount = useMemo(
     () => getEligibleCompletedUnbatchedRecords(records, completedBatches).eligible.length,
@@ -1392,8 +1492,12 @@ export default function App() {
               type="button"
               onClick={() => {
                 setFilterStatus('');
-                setFilterLocation('');
-                setFilterMonth('');
+                setFilterMoo('');
+                setFilterSubdistrict('');
+                setFilterDistrict('');
+                setFilterProvince('');
+                setFilterDateFrom('');
+                setFilterDateTo('');
                 setSearchQuery('');
               }}
               className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 dark:bg-[#163B6B] dark:hover:bg-[#1D4E8C] border border-white/20 dark:border-[#285C9E] text-white text-[11px] sm:text-xs font-medium inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
@@ -1403,53 +1507,147 @@ export default function App() {
             </button>
           </div>
 
-          <div className="p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                สถานะคำขอ
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
-              >
-                <option value="">ทั้งหมด</option>
-                {statusOptions.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
-                  </option>
-                ))}
-              </select>
+          <div className="p-3.5 sm:p-4 space-y-3">
+            {/* Row 1: Status + Date Range (วัน/เดือน/ปี ระหว่างช่วง) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+              <div className="lg:col-span-4">
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  สถานะคำขอ
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
+                >
+                  <option value="">ทั้งหมด</option>
+                  {statusOptions.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="lg:col-span-8">
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  ช่วง วัน / เดือน / ปี (วันที่ยื่นคำร้อง)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl px-3 py-1.5 focus-within:bg-white dark:focus-within:bg-[#132238] focus-within:border-[#0B4DA2] dark:focus-within:border-[#3B8CE2] transition-colors">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                      ตั้งแต่
+                    </span>
+                    <input
+                      type="date"
+                      value={filterDateFrom}
+                      max={filterDateTo || undefined}
+                      onChange={(e) => setFilterDateFrom(e.target.value)}
+                      aria-label="ตั้งแต่วันที่"
+                      className="w-full bg-transparent text-xs text-slate-900 dark:text-slate-100 outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl px-3 py-1.5 focus-within:bg-white dark:focus-within:bg-[#132238] focus-within:border-[#0B4DA2] dark:focus-within:border-[#3B8CE2] transition-colors">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                      ถึงวันที่
+                    </span>
+                    <input
+                      type="date"
+                      value={filterDateTo}
+                      min={filterDateFrom || undefined}
+                      onChange={(e) => setFilterDateTo(e.target.value)}
+                      aria-label="ถึงวันที่"
+                      className="w-full bg-transparent text-xs text-slate-900 dark:text-slate-100 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                พื้นที่ (ตำบล อำเภอ จังหวัด)
-              </label>
-              <select
-                value={filterLocation}
-                onChange={(e) => setFilterLocation(e.target.value)}
-                className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
-              >
-                <option value="">ทั้งหมด</option>
-                {locationOptions.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Row 2: Sub-area filters (หมู่ / ตำบล / อำเภอ / จังหวัด) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-1 border-t border-slate-100 dark:border-[#172A44]">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  หมู่
+                </label>
+                <select
+                  value={filterMoo}
+                  onChange={(e) => setFilterMoo(e.target.value)}
+                  className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
+                >
+                  <option value="">ทุกหมู่</option>
+                  {mooOptions.map((m) => (
+                    <option key={m} value={m}>
+                      หมู่ที่ {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                เดือน / ปี (วันที่ยื่นคำร้อง)
-              </label>
-              <input
-                type="month"
-                value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-                className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-1.5 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
-              />
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  ตำบล
+                </label>
+                <select
+                  value={filterSubdistrict}
+                  onChange={(e) => {
+                    setFilterSubdistrict(e.target.value);
+                    setFilterMoo('');
+                  }}
+                  className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
+                >
+                  <option value="">ทุกตำบล</option>
+                  {subdistrictOptions.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  อำเภอ
+                </label>
+                <select
+                  value={filterDistrict}
+                  onChange={(e) => {
+                    setFilterDistrict(e.target.value);
+                    setFilterSubdistrict('');
+                    setFilterMoo('');
+                  }}
+                  className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
+                >
+                  <option value="">ทุกอำเภอ</option>
+                  {districtOptions.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  จังหวัด
+                </label>
+                <select
+                  value={filterProvince}
+                  onChange={(e) => {
+                    setFilterProvince(e.target.value);
+                    setFilterDistrict('');
+                    setFilterSubdistrict('');
+                    setFilterMoo('');
+                  }}
+                  className="w-full bg-[#F4F8FD] dark:bg-[#091322] border border-[#D5E3F4] dark:border-[#1D3350] rounded-xl py-2 px-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:bg-white dark:focus:bg-[#132238] focus:border-[#0B4DA2] dark:focus:border-[#3B8CE2] transition-colors"
+                >
+                  <option value="">ทุกจังหวัด</option>
+                  {provinceOptions.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </section>
@@ -1598,8 +1796,14 @@ export default function App() {
                 searchQuery={searchQuery}
                 filterContext={{
                   status: filterStatus,
-                  location: filterLocation,
-                  month: filterMonth,
+                  location: [filterMoo ? `หมู่ที่ ${filterMoo}` : '', filterSubdistrict, filterDistrict, filterProvince].filter(Boolean).join(' '),
+                  province: filterProvince,
+                  district: filterDistrict,
+                  subdistrict: filterSubdistrict,
+                  moo: filterMoo,
+                  month: '',
+                  dateFrom: filterDateFrom,
+                  dateTo: filterDateTo,
                   searchQuery,
                   totalUnfilteredCount: records.length,
                 }}

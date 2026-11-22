@@ -125,6 +125,7 @@ export interface CompletedBatchRecord {
   jobNumber: string;
   waterUserNo: string;
   meterNumber: string;
+  meterSize?: string;
   requestDate: string;
   fullName: string;
   houseNo: string;
@@ -141,6 +142,17 @@ export interface CompletedBatchRecord {
   note: string;
 }
 
+export interface BatchMemoSigners {
+  meterSizeText?: string;
+  proposerName?: string;
+  proposerTitle?: string;
+  managerName?: string;
+  managerTitle?: string;
+  adminHeadName?: string;
+  adminHeadTitle?: string;
+  inspectorTitle?: string;
+}
+
 export interface CompletedBatch {
   id: string;
   spreadsheetId: string;
@@ -151,6 +163,8 @@ export interface CompletedBatch {
   note: string;
   exportFormats: Array<'excel' | 'pdf'>;
   statusUpdatedInSheet: boolean;
+  includeTax?: boolean;
+  memoSigners?: BatchMemoSigners;
   recordCount: number;
   totalAmount: number;
   mappedCount: number;

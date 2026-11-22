@@ -579,13 +579,18 @@ async function startServer() {
     const batch = {
       id,
       spreadsheetId: key,
-      batchCode: String(body.batchCode || `DONE-${new Date(now).toISOString().slice(0, 10).replace(/-/g, '')}`),
+      batchCode: String(body.batchCode || 'มท55120-183/'),
       title: String(body.title || 'ชุดงานติดตั้งมาตรวัดน้ำเสร็จสิ้น'),
       completedDate: String(body.completedDate || new Date(now).toISOString().slice(0, 10)),
       inspectorName: String(body.inspectorName || ''),
       note: String(body.note || ''),
       exportFormats: Array.isArray(body.exportFormats) ? body.exportFormats : ['excel', 'pdf'],
       statusUpdatedInSheet: Boolean(body.statusUpdatedInSheet),
+      includeTax: body.includeTax !== undefined ? Boolean(body.includeTax) : true,
+      memoSigners:
+        body.memoSigners && typeof body.memoSigners === 'object'
+          ? body.memoSigners
+          : undefined,
       recordCount: records.length,
       totalAmount,
       mappedCount,

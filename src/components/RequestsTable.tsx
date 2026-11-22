@@ -79,7 +79,13 @@ export const RequestsTable: React.FC<RequestsTableProps> = ({
     searchQuery,
     filterContext.status,
     filterContext.location,
+    filterContext.province,
+    filterContext.district,
+    filterContext.subdistrict,
+    filterContext.moo,
     filterContext.month,
+    filterContext.dateFrom,
+    filterContext.dateTo,
   ]);
 
   const totalPages = Math.max(1, Math.ceil(records.length / pageSize));

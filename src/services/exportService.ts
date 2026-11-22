@@ -13,7 +13,13 @@ export type ExportScope = 'all' | 'by_status' | 'by_area';
 export interface ExportFilterContext {
   status: string;
   location: string;
+  province?: string;
+  district?: string;
+  subdistrict?: string;
+  moo?: string;
   month: string;
+  dateFrom?: string;
+  dateTo?: string;
   searchQuery: string;
   totalUnfilteredCount: number;
 }
@@ -169,8 +175,28 @@ export function computeExportAnalytics(records: MeterRequest[]): ExportAnalytics
 export function describeActiveFilters(ctx: ExportFilterContext): string {
   const parts: string[] = [];
   if (ctx.status) parts.push(`สถานะ: ${ctx.status}`);
-  if (ctx.location) parts.push(`พื้นที่: ${ctx.location}`);
-  if (ctx.month) parts.push(`เดือน/ปี: ${ctx.month}`);
+
+  const areaParts: string[] = [];
+  if (ctx.moo) areaParts.push(`หมู่ที่ ${ctx.moo}`);
+  if (ctx.subdistrict) areaParts.push(ctx.subdistrict);
+  if (ctx.district) areaParts.push(ctx.district);
+  if (ctx.province) areaParts.push(ctx.province);
+  if (areaParts.length > 0) {
+    parts.push(`พื้นที่: ${areaParts.join(' ')}`);
+  } else if (ctx.location) {
+    parts.push(`พื้นที่: ${ctx.location}`);
+  }
+
+  if (ctx.dateFrom && ctx.dateTo) {
+    parts.push(`ช่วงวันที่: ${formatThaiDate(ctx.dateFrom)} - ${formatThaiDate(ctx.dateTo)}`);
+  } else if (ctx.dateFrom) {
+    parts.push(`ตั้งแต่วันที่: ${formatThaiDate(ctx.dateFrom)}`);
+  } else if (ctx.dateTo) {
+    parts.push(`ถึงวันที่: ${formatThaiDate(ctx.dateTo)}`);
+  } else if (ctx.month) {
+    parts.push(`เดือน/ปี: ${ctx.month}`);
+  }
+
   if (ctx.searchQuery.trim()) parts.push(`คำค้น: "${ctx.searchQuery.trim()}"`);
   if (parts.length === 0) return 'ทั้งหมด (ไม่มีตัวกรอง)';
   return parts.join('  |  ');
@@ -1343,6 +1369,7 @@ function cleanBatchTemplateFields(rec: CompletedBatchRecord) {
   const houseNo = (rec.houseNo || '').trim() || '-';
   const jobNo = (rec.jobNumber ?? rec.rqNumber ?? '').trim() || '-';
   const meterNo = (rec.meterNumber ?? '').trim() || '-';
+  const meterSize = (rec.meterSize ?? '').trim() || '-';
   const waterNo = (rec.waterUserNo ?? '').trim() || '-';
   const priceNum = Number.isFinite(Number(rec.price)) ? Number(rec.price) : 0;
   const note = (rec.note || '').trim();
@@ -1354,10 +1381,189 @@ function cleanBatchTemplateFields(rec: CompletedBatchRecord) {
     district: rawDist && rawDist !== '-' ? rawDist : '-',
     jobNo,
     meterNo,
+    meterSize,
     waterNo,
     price: priceNum,
     note,
   };
+}
+
+const THAI_LONG_MONTHS = [
+  'มกราคม',
+  'กุมภาพันธ์',
+  'มีนาคม',
+  'เมษายน',
+  'พฤษภาคม',
+  'มิถุนายน',
+  'กรกฎาคม',
+  'สิงหาคม',
+  'กันยายน',
+  'ตุลาคม',
+  'พฤศจิกายน',
+  'ธันวาคม',
+];
+
+function formatThaiOfficialDate(iso: string): string {
+  const raw = (iso || '').trim();
+  if (!raw) return '....................';
+  const match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    const year = Number.parseInt(match[1], 10);
+    const monthIdx = Number.parseInt(match[2], 10) - 1;
+    const day = Number.parseInt(match[3], 10);
+    if (monthIdx >= 0 && monthIdx < 12 && day >= 1 && day <= 31) {
+      const beYear = year > 2400 ? year : year + 543;
+      return `${day} ${THAI_LONG_MONTHS[monthIdx]} ${beYear}`;
+    }
+  }
+  const d = new Date(raw);
+  if (!Number.isNaN(d.getTime())) {
+    return `${d.getDate()} ${THAI_LONG_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+  }
+  return raw;
+}
+
+function resolveBatchFinancials(batch: CompletedBatch) {
+  const subtotal = batch.records.reduce(
+    (sum, r) => sum + (Number.isFinite(Number(r.price)) ? Number(r.price) : 0),
+    0
+  );
+  const includeTax = batch.includeTax !== false;
+  const vatAmount = includeTax ? Math.round(subtotal * 0.07 * 100) / 100 : 0;
+  const grandTotal = Math.round((subtotal + vatAmount) * 100) / 100;
+  const taxNote = includeTax ? 'รวมภาษีมูลค่าเพิ่ม' : 'ไม่รวมภาษีมูลค่าเพิ่ม';
+  return { subtotal, includeTax, vatAmount, grandTotal, taxNote };
+}
+
+function resolveMemoSigners(batch: CompletedBatch) {
+  const s = batch.memoSigners || {};
+  return {
+    docNo: (batch.batchCode || '').trim() || 'มท55120-183/',
+    approvalDateText: formatThaiOfficialDate(batch.completedDate),
+    meterSizeText: (s.meterSizeText || '').trim() || '1/2"',
+    proposerName: (s.proposerName || '').trim() || 'นายคมกฤช ปัญญา',
+    proposerTitle:
+      (s.proposerTitle || '').trim() || 'หัวหน้างาน 8 งานบริการและควบคุมน้ำสูญเสีย',
+    managerName: (s.managerName || '').trim() || 'นายปริญญา กัตฐะ',
+    managerTitle:
+      (s.managerTitle || '').trim() ||
+      'ผู้จัดการการประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี',
+    adminHeadName: (s.adminHeadName || '').trim() || 'นางชฎาภัทร์ แจ่มสว่าง',
+    adminHeadTitle: (s.adminHeadTitle || '').trim() || 'หัวหน้างาน 8 งานอำนวยการ',
+    inspectorName: (batch.inspectorName || '').trim() || 'นายสามารถ บุญกัน',
+    inspectorTitle: (s.inspectorTitle || '').trim() || 'นายช่างโยธา 6',
+  };
+}
+
+function segmentThaiWords(text: string): string[] {
+  if (typeof Intl !== 'undefined' && typeof (Intl as any).Segmenter === 'function') {
+    const seg = new (Intl as any).Segmenter('th', { granularity: 'word' });
+    return Array.from(seg.segment(text), (item: any) => String(item.segment));
+  }
+  return text.split(/(\s+)/);
+}
+
+function drawWrappedThaiParagraph(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  startY: number,
+  maxWidth: number,
+  lineHeight: number,
+  firstLineIndent = 0
+): number {
+  const tokens = segmentThaiWords(text);
+  let line = '';
+  let y = startY;
+  let isFirst = true;
+
+  for (const token of tokens) {
+    const allowedW = isFirst ? maxWidth - firstLineIndent : maxWidth;
+    const candidate = line + token;
+    if (line && ctx.measureText(candidate).width > allowedW) {
+      const drawX = isFirst ? x + firstLineIndent : x;
+      ctx.fillText(line.trimEnd(), drawX, y);
+      y += lineHeight;
+      line = token.trimStart();
+      isFirst = false;
+    } else {
+      line = candidate;
+    }
+  }
+
+  if (line) {
+    const drawX = isFirst ? x + firstLineIndent : x;
+    ctx.fillText(line.trimEnd(), drawX, y);
+    y += lineHeight;
+  }
+
+  return y;
+}
+
+function drawPwaOfficialSeal(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number
+): void {
+  ctx.save();
+  ctx.strokeStyle = '#000000';
+  ctx.fillStyle = '#000000';
+
+  // Outer double rings
+  ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius - 7, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius - 26, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Inner stylized water droplet & wave motif
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 28);
+  ctx.bezierCurveTo(cx + 18, cy - 8, cx + 20, cy + 8, cx, cy + 20);
+  ctx.bezierCurveTo(cx - 20, cy + 8, cx - 18, cy - 8, cx, cy - 28);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Stylized waves beneath droplet
+  ctx.lineWidth = 1.6;
+  [-1, 1].forEach((dir) => {
+    ctx.beginPath();
+    ctx.moveTo(cx - 24, cy + 24 + dir * 4);
+    ctx.quadraticCurveTo(cx - 12, cy + 18 + dir * 4, cx, cy + 24 + dir * 4);
+    ctx.quadraticCurveTo(cx + 12, cy + 30 + dir * 4, cx + 24, cy + 24 + dir * 4);
+    ctx.stroke();
+  });
+
+  // Curved text along bottom arc: การประปาส่วนภูมิภาค
+  const sealLabel = 'การประปาส่วนภูมิภาค';
+  ctx.font = '700 13px Sarabun, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const textRadius = radius - 16.5;
+  const totalAngle = Math.PI * 0.92;
+  const startAngle = Math.PI / 2 + totalAngle / 2;
+  const chars = Array.from(sealLabel);
+  chars.forEach((ch, idx) => {
+    const ratio = chars.length > 1 ? idx / (chars.length - 1) : 0.5;
+    const angle = startAngle - ratio * totalAngle;
+    ctx.save();
+    ctx.translate(cx + Math.cos(angle) * textRadius, cy + Math.sin(angle) * textRadius);
+    ctx.rotate(angle - Math.PI / 2);
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+  });
+
+  ctx.restore();
 }
 
 export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promise<string> {
@@ -1365,16 +1571,205 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   workbook.creator = 'ระบบติดตามคำขอติดตั้ง/ย้ายมาตรวัดน้ำ';
   workbook.created = new Date();
 
+  const { subtotal, includeTax, vatAmount, grandTotal, taxNote } =
+    resolveBatchFinancials(batch);
+  const memo = resolveMemoSigners(batch);
+
   const thinBlackBorder: Partial<ExcelJS.Borders> = {
     top: { style: 'thin', color: { argb: 'FF000000' } },
     bottom: { style: 'thin', color: { argb: 'FF000000' } },
     left: { style: 'thin', color: { argb: 'FF000000' } },
     right: { style: 'thin', color: { argb: 'FF000000' } },
   };
+  const bottomThinBorder: Partial<ExcelJS.Borders> = {
+    bottom: { style: 'thin', color: { argb: 'FF000000' } },
+  };
 
-  // Sheet 1: แบบฟอร์มมาตรฐาน กปภ. (11 คอลัมน์ A–K ตามรูปต้นแบบ)
+  // Sheet 1: บันทึกข้อความ (อยู่แผ่นก่อนรายการสรุปตาราง)
+  const memoWs = workbook.addWorksheet('บันทึกข้อความ');
+  memoWs.pageSetup = {
+    paperSize: 9,
+    orientation: 'portrait',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 1,
+    margins: {
+      left: 0.7,
+      right: 0.65,
+      top: 0.6,
+      bottom: 0.6,
+      header: 0.2,
+      footer: 0.2,
+    },
+  };
+  [12, 18, 14, 10, 10, 12, 18, 18].forEach((w, idx) => {
+    memoWs.getColumn(idx + 1).width = w;
+  });
+
+  memoWs.mergeCells(1, 1, 2, 8);
+  const memoTitleCell = memoWs.getCell(1, 1);
+  memoTitleCell.value = 'บันทึกข้อความ';
+  memoTitleCell.font = { name: 'Sarabun', size: 22, bold: true, color: { argb: 'FF000000' } };
+  memoTitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(1).height = 24;
+  memoWs.getRow(2).height = 24;
+
+  // Row 3: หน่วยงาน
+  memoWs.getRow(3).height = 22;
+  memoWs.getCell(3, 1).value = 'หน่วยงาน';
+  memoWs.getCell(3, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.mergeCells(3, 2, 3, 8);
+  memoWs.getCell(3, 2).value = 'การประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี งานบริการและควบคุมน้ำสูญเสีย';
+  memoWs.getCell(3, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  for (let c = 2; c <= 8; c++) memoWs.getCell(3, c).border = bottomThinBorder;
+
+  // Row 4: ที่ ... วันที่ ...
+  memoWs.getRow(4).height = 22;
+  memoWs.getCell(4, 1).value = 'ที่';
+  memoWs.getCell(4, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.mergeCells(4, 2, 4, 4);
+  memoWs.getCell(4, 2).value = memo.docNo;
+  memoWs.getCell(4, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  for (let c = 2; c <= 4; c++) memoWs.getCell(4, c).border = bottomThinBorder;
+
+  memoWs.getCell(4, 5).value = 'วันที่';
+  memoWs.getCell(4, 5).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getCell(4, 5).alignment = { vertical: 'middle', horizontal: 'right' };
+  memoWs.mergeCells(4, 6, 4, 8);
+  memoWs.getCell(4, 6).value = memo.approvalDateText;
+  memoWs.getCell(4, 6).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  for (let c = 6; c <= 8; c++) memoWs.getCell(4, c).border = bottomThinBorder;
+
+  // Row 5: เรื่อง
+  memoWs.getRow(5).height = 22;
+  memoWs.getCell(5, 1).value = 'เรื่อง';
+  memoWs.getCell(5, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.mergeCells(5, 2, 5, 8);
+  memoWs.getCell(5, 2).value = 'ขออนุมัติจ้างเหมา งานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่';
+  memoWs.getCell(5, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  for (let c = 2; c <= 8; c++) memoWs.getCell(5, c).border = bottomThinBorder;
+
+  // Row 6: เรียน
+  memoWs.getRow(6).height = 24;
+  memoWs.getCell(6, 1).value = 'เรียน';
+  memoWs.getCell(6, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.mergeCells(6, 2, 6, 8);
+  memoWs.getCell(6, 2).value = 'ผู้จัดการการประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี';
+  memoWs.getCell(6, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+
+  memoWs.getRow(7).height = 10;
+
+  // Row 8: Paragraph 1
+  memoWs.mergeCells(8, 1, 8, 8);
+  const p1Cell = memoWs.getCell(8, 1);
+  p1Cell.value =
+    `        ด้วยงานบริการและควบคุมน้ำสูญเสีย มีความจำเป็นเร่งด่วนต้องดำเนินการติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
+    `เพื่อให้ผู้ใช้น้ำได้รับการบริการรวดเร็วในการติดตั้งวางท่อประปาและมาตรวัดน้ำ ขนาด ${memo.meterSizeText} ` +
+    `ซึ่งมีความสำคัญในการเพิ่มจำนวนผู้ใช้น้ำและเป็นการให้บริการอย่างรวดเร็วเพื่อให้ทันต่อความต้องการของผู้ใช้น้ำ`;
+  p1Cell.font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  p1Cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+  memoWs.getRow(8).height = 68;
+
+  // Row 9: Paragraph 2
+  memoWs.mergeCells(9, 1, 9, 8);
+  const p2Cell = memoWs.getCell(9, 1);
+  p2Cell.value =
+    `        ดังนั้น งานบริการและควบคุมน้ำสูญเสีย จึงขออนุมัติจ้างเหมางานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
+    `จำนวน ${batch.records.length} ราย เป็นเงินทั้งสิ้น ${formatBaht(grandTotal)} -บาท (${taxNote}) ดังรายละเอียดที่แนบมาพร้อมบันทึกนี้`;
+  p2Cell.font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  p2Cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+  memoWs.getRow(9).height = 50;
+
+  // Row 10: Paragraph 3
+  memoWs.mergeCells(10, 1, 10, 8);
+  const p3Cell = memoWs.getCell(10, 1);
+  p3Cell.value = '        จึงเรียนมาเพื่อโปรดทราบและพิจารณาอนุมัติ';
+  p3Cell.font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  p3Cell.alignment = { vertical: 'middle', horizontal: 'left' };
+  memoWs.getRow(10).height = 24;
+
+  memoWs.getRow(11).height = 28;
+
+  // Rows 12-13: Proposer Block (Right side)
+  memoWs.mergeCells(12, 5, 12, 8);
+  memoWs.getCell(12, 5).value = `(${memo.proposerName})`;
+  memoWs.getCell(12, 5).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(12, 5).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(12).height = 20;
+
+  memoWs.mergeCells(13, 5, 13, 8);
+  memoWs.getCell(13, 5).value = memo.proposerTitle;
+  memoWs.getCell(13, 5).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(13, 5).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(13).height = 20;
+
+  // Approval block (Left side)
+  memoWs.mergeCells(14, 1, 14, 4);
+  memoWs.getCell(14, 1).value = 'อนุมัติ';
+  memoWs.getCell(14, 1).font = { name: 'Sarabun', size: 12.5, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getRow(14).height = 20;
+
+  memoWs.mergeCells(15, 2, 15, 5);
+  memoWs.getCell(15, 2).value = 'เรียน  หัวหน้างานอำนวยการ';
+  memoWs.getCell(15, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getRow(15).height = 20;
+
+  memoWs.getRow(16).height = 26;
+
+  memoWs.mergeCells(17, 1, 17, 4);
+  memoWs.getCell(17, 1).value = `(${memo.managerName})`;
+  memoWs.getCell(17, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(17, 1).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(17).height = 20;
+
+  memoWs.mergeCells(18, 1, 18, 4);
+  memoWs.getCell(18, 1).value = memo.managerTitle;
+  memoWs.getCell(18, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(18, 1).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(18).height = 20;
+
+  memoWs.mergeCells(19, 1, 19, 4);
+  memoWs.getCell(19, 1).value = 'วันที่.......................................';
+  memoWs.getCell(19, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(19, 1).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(19).height = 20;
+
+  memoWs.getRow(20).height = 16;
+
+  // Admin head forwarding block (Bottom left)
+  memoWs.mergeCells(21, 1, 21, 4);
+  memoWs.getCell(21, 1).value = 'เรียน  พนักงานพัสดุ';
+  memoWs.getCell(21, 1).font = { name: 'Sarabun', size: 12.5, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getRow(21).height = 20;
+
+  memoWs.mergeCells(22, 2, 22, 5);
+  memoWs.getCell(22, 2).value = 'เพื่อทราบและดำเนินการต่อไป';
+  memoWs.getCell(22, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getRow(22).height = 20;
+
+  memoWs.getRow(23).height = 26;
+
+  memoWs.mergeCells(24, 1, 24, 4);
+  memoWs.getCell(24, 1).value = `(${memo.adminHeadName})`;
+  memoWs.getCell(24, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(24, 1).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(24).height = 20;
+
+  memoWs.mergeCells(25, 1, 25, 4);
+  memoWs.getCell(25, 1).value = memo.adminHeadTitle;
+  memoWs.getCell(25, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(25, 1).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(25).height = 20;
+
+  memoWs.mergeCells(26, 1, 26, 4);
+  memoWs.getCell(26, 1).value = 'วันที่.......................................';
+  memoWs.getCell(26, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(26, 1).alignment = { vertical: 'middle', horizontal: 'center' };
+  memoWs.getRow(26).height = 20;
+
+  // Sheet 2: แบบฟอร์มมาตรฐาน กปภ. (12 คอลัมน์ A–L รวมขนาดมาตร)
   const ws = workbook.addWorksheet('รายชื่อติดตั้งมาตรวัดน้ำ');
-  const colsCount = 11;
+  const colsCount = 12;
 
   ws.pageSetup = {
     paperSize: 9,
@@ -1392,7 +1787,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     },
   };
 
-  [8, 25, 11, 7, 14, 14, 21, 23, 16, 14, 18].forEach((w, idx) => {
+  [8, 24, 11, 7, 13, 13, 20, 21, 12, 16, 14, 18].forEach((w, idx) => {
     ws.getColumn(idx + 1).width = w;
   });
 
@@ -1411,7 +1806,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   title2.alignment = { vertical: 'middle', horizontal: 'center' };
   ws.getRow(2).height = 22;
 
-  // Row 3: Table Header (11 columns A–K)
+  // Row 3: Table Header (12 columns A–L)
   const headerRow = ws.getRow(3);
   headerRow.values = [
     'ลำดับที่',
@@ -1422,6 +1817,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     'อำเภอ',
     'งานเลขที่',
     'หมายเลขมาตร',
+    'ขนาดมาตร',
     'เลขที่ผู้ใช้น้ำ',
     'วงเงินที่จะจ้าง',
     'หมายเหตุ',
@@ -1456,12 +1852,13 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
         f.district,
         f.jobNo,
         f.meterNo,
+        f.meterSize,
         f.waterNo,
         f.price,
         f.note,
       ];
     } else {
-      r.values = ['', '', '', '', '', '', '', '', '', '', ''];
+      r.values = ['', '', '', '', '', '', '', '', '', '', '', ''];
     }
 
     for (let c = 1; c <= colsCount; c++) {
@@ -1470,12 +1867,12 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
       cell.border = thinBlackBorder;
       if (c === 2) {
         cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-      } else if (c === 11) {
+      } else if (c === 12) {
         cell.alignment = { vertical: 'middle', horizontal: 'left' };
       } else {
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
       }
-      if (c === 10 && i < batch.records.length) {
+      if (c === 11 && i < batch.records.length) {
         cell.numFmt = '#,##0.00';
       }
     }
@@ -1495,45 +1892,84 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     cell.border = thinBlackBorder;
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   }
-  const sumCell = totRow.getCell(10);
+  const sumCell = totRow.getCell(11);
   sumCell.value = {
-    formula: `SUM(J${startBodyRow}:J${lastBodyRow})`,
+    formula: `SUM(K${startBodyRow}:K${lastBodyRow})`,
     result: computedTotal,
   };
   sumCell.numFmt = '#,##0.00';
   sumCell.font = { name: 'Sarabun', size: 11, bold: false, color: { argb: 'FF000000' } };
   sumCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
-  // Signature Block (right-aligned under columns I–K)
-  const inspector = (batch.inspectorName || '').trim() || 'นายสามารถ บุญกัน';
-  ws.getRow(totalRowIdx + 1).height = 14;
+  let afterTotalsRowIdx = totalRowIdx;
+  if (includeTax) {
+    const vatRowIdx = totalRowIdx + 1;
+    const vatRow = ws.getRow(vatRowIdx);
+    vatRow.height = 22;
+    ws.mergeCells(vatRowIdx, 1, vatRowIdx, 2);
+    vatRow.getCell(1).value = 'ภาษีมูลค่าเพิ่ม 7%';
+    for (let c = 1; c <= colsCount; c++) {
+      const cell = vatRow.getCell(c);
+      cell.font = { name: 'Sarabun', size: 11, bold: false, color: { argb: 'FF000000' } };
+      cell.border = thinBlackBorder;
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    }
+    const vatCell = vatRow.getCell(11);
+    vatCell.value = {
+      formula: `ROUND(K${totalRowIdx}*0.07,2)`,
+      result: vatAmount,
+    };
+    vatCell.numFmt = '#,##0.00';
 
-  const sigRow1 = totalRowIdx + 2;
-  ws.mergeCells(sigRow1, 9, sigRow1, 11);
-  const sigCell1 = ws.getCell(sigRow1, 9);
+    const grandRowIdx = vatRowIdx + 1;
+    const grandRow = ws.getRow(grandRowIdx);
+    grandRow.height = 22;
+    ws.mergeCells(grandRowIdx, 1, grandRowIdx, 2);
+    grandRow.getCell(1).value = 'รวมเป็นเงินทั้งสิ้น';
+    for (let c = 1; c <= colsCount; c++) {
+      const cell = grandRow.getCell(c);
+      cell.font = { name: 'Sarabun', size: 11, bold: true, color: { argb: 'FF000000' } };
+      cell.border = thinBlackBorder;
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    }
+    const grandCell = grandRow.getCell(11);
+    grandCell.value = {
+      formula: `K${totalRowIdx}+K${vatRowIdx}`,
+      result: grandTotal,
+    };
+    grandCell.numFmt = '#,##0.00';
+    afterTotalsRowIdx = grandRowIdx;
+  }
+
+  // Signature Block (right-aligned under columns J–L)
+  ws.getRow(afterTotalsRowIdx + 1).height = 14;
+
+  const sigRow1 = afterTotalsRowIdx + 2;
+  ws.mergeCells(sigRow1, 10, sigRow1, 12);
+  const sigCell1 = ws.getCell(sigRow1, 10);
   sigCell1.value = 'ลงชื่อ........................................ผู้ควบคุมงาน';
   sigCell1.font = { name: 'Sarabun', size: 11, color: { argb: 'FF000000' } };
   sigCell1.alignment = { vertical: 'middle', horizontal: 'center' };
   ws.getRow(sigRow1).height = 20;
 
-  const sigRow2 = totalRowIdx + 3;
-  ws.mergeCells(sigRow2, 9, sigRow2, 11);
-  const sigCell2 = ws.getCell(sigRow2, 9);
-  sigCell2.value = `(${inspector})`;
+  const sigRow2 = afterTotalsRowIdx + 3;
+  ws.mergeCells(sigRow2, 10, sigRow2, 12);
+  const sigCell2 = ws.getCell(sigRow2, 10);
+  sigCell2.value = `(${memo.inspectorName})`;
   sigCell2.font = { name: 'Sarabun', size: 11, color: { argb: 'FF000000' } };
   sigCell2.alignment = { vertical: 'middle', horizontal: 'center' };
   ws.getRow(sigRow2).height = 20;
 
-  const sigRow3 = totalRowIdx + 4;
-  ws.mergeCells(sigRow3, 9, sigRow3, 11);
-  const sigCell3 = ws.getCell(sigRow3, 9);
-  sigCell3.value = 'นายช่างโยธา 6';
+  const sigRow3 = afterTotalsRowIdx + 4;
+  ws.mergeCells(sigRow3, 10, sigRow3, 12);
+  const sigCell3 = ws.getCell(sigRow3, 10);
+  sigCell3.value = memo.inspectorTitle;
   sigCell3.font = { name: 'Sarabun', size: 11, color: { argb: 'FF000000' } };
   sigCell3.alignment = { vertical: 'middle', horizontal: 'center' };
   ws.getRow(sigRow3).height = 20;
 
-  // Sheet 2: ตารางตามชีท (A-J) สำหรับวางเข้า Google Sheets โดยตรง
-  const sheetWs = workbook.addWorksheet('ตารางตามชีท (A-J)');
+  // Sheet 3: ตารางตามชีท (A-K) สำหรับวางเข้า Google Sheets โดยตรง
+  const sheetWs = workbook.addWorksheet('ตารางตามชีท (A-K)');
   const ajHeaders = [
     'เลขที่ งาน',
     'เลขที่ผู้ใช้น้ำ',
@@ -1545,6 +1981,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     'เบอร์โทร',
     'สถานะ',
     'หมายเลขมาตร',
+    'ขนาดมาตร',
   ];
   const ajHeaderRow = sheetWs.getRow(1);
   ajHeaderRow.values = ajHeaders;
@@ -1555,7 +1992,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
   sheetWs.views = [{ state: 'frozen', ySplit: 1 }];
-  [18, 18, 26, 11, 18, 20, 18, 16, 20, 22].forEach((w, idx) => {
+  [18, 18, 26, 11, 18, 20, 18, 16, 20, 22, 14].forEach((w, idx) => {
     sheetWs.getColumn(idx + 1).width = w;
   });
 
@@ -1573,6 +2010,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
       rec.phone || '',
       rec.status || 'ติดตั้งเสร็จสิ้น',
       (rec.meterNumber ?? '').trim(),
+      (rec.meterSize ?? '').trim(),
     ];
     r.height = 20;
     r.eachCell((cell) => {
@@ -1602,30 +2040,168 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     await document.fonts.ready;
   }
 
+  const { subtotal, includeTax, vatAmount, grandTotal, taxNote } =
+    resolveBatchFinancials(batch);
+  const memo = resolveMemoSigners(batch);
+
+  // Page 1: บันทึกข้อความ (Portrait A4: 1680 x 2376 px)
+  const MEMO_W = 1680;
+  const MEMO_H = 2376;
+  const memoCanvas = document.createElement('canvas');
+  memoCanvas.width = MEMO_W;
+  memoCanvas.height = MEMO_H;
+  const mctx = memoCanvas.getContext('2d')!;
+  mctx.fillStyle = '#FFFFFF';
+  mctx.fillRect(0, 0, MEMO_W, MEMO_H);
+
+  drawPwaOfficialSeal(mctx, 250, 210, 86);
+
+  mctx.fillStyle = '#000000';
+  mctx.font = '700 52px Sarabun, sans-serif';
+  mctx.textAlign = 'center';
+  mctx.fillText('บันทึกข้อความ', MEMO_W / 2 + 40, 232);
+
+  // Official Memo Header Lines
+  const ML = 165;
+  const MR = 1515;
+  let my = 360;
+
+  const drawUnderlinedField = (
+    label: string,
+    val: string,
+    startX: number,
+    endX: number,
+    yPos: number
+  ) => {
+    mctx.textAlign = 'left';
+    mctx.font = '700 28px Sarabun, sans-serif';
+    mctx.fillText(label, startX, yPos);
+    const labelW = mctx.measureText(label).width + 14;
+    mctx.font = '400 27px Sarabun, sans-serif';
+    mctx.fillText(val, startX + labelW + 8, yPos);
+
+    mctx.strokeStyle = '#000000';
+    mctx.lineWidth = 1.4;
+    mctx.beginPath();
+    mctx.moveTo(startX + labelW, yPos + 8);
+    mctx.lineTo(endX, yPos + 8);
+    mctx.stroke();
+  };
+
+  drawUnderlinedField(
+    'หน่วยงาน',
+    'การประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี งานบริการและควบคุมน้ำสูญเสีย',
+    ML,
+    MR,
+    my
+  );
+  my += 56;
+  drawUnderlinedField('ที่', memo.docNo, ML, 825, my);
+  drawUnderlinedField('วันที่', memo.approvalDateText, 855, MR, my);
+  my += 56;
+  drawUnderlinedField(
+    'เรื่อง',
+    'ขออนุมัติจ้างเหมา งานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่',
+    ML,
+    MR,
+    my
+  );
+  my += 58;
+
+  mctx.textAlign = 'left';
+  mctx.font = '700 28px Sarabun, sans-serif';
+  mctx.fillText('เรียน', ML, my);
+  const deanLabelW = mctx.measureText('เรียน').width + 18;
+  mctx.font = '400 27px Sarabun, sans-serif';
+  mctx.fillText('ผู้จัดการการประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี', ML + deanLabelW, my);
+  my += 68;
+
+  // Body Paragraphs
+  mctx.font = '400 27px Sarabun, sans-serif';
+  const BODY_W = MR - ML;
+  const LINE_H = 48;
+  const INDENT = 92;
+
+  const para1 =
+    `ด้วยงานบริการและควบคุมน้ำสูญเสีย มีความจำเป็นเร่งด่วนต้องดำเนินการติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
+    `เพื่อให้ผู้ใช้น้ำได้รับการบริการรวดเร็วในการติดตั้งวางท่อประปาและมาตรวัดน้ำ ขนาด ${memo.meterSizeText} ` +
+    `ซึ่งมีความสำคัญในการเพิ่มจำนวนผู้ใช้น้ำและเป็นการให้บริการอย่างรวดเร็วเพื่อให้ทันต่อความต้องการของผู้ใช้น้ำ`;
+  my = drawWrappedThaiParagraph(mctx, para1, ML, my, BODY_W, LINE_H, INDENT);
+  my += 16;
+
+  const para2 =
+    `ดังนั้น งานบริการและควบคุมน้ำสูญเสีย จึงขออนุมัติจ้างเหมางานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
+    `จำนวน ${batch.records.length} ราย เป็นเงินทั้งสิ้น ${formatBaht(grandTotal)} -บาท (${taxNote}) ดังรายละเอียดที่แนบมาพร้อมบันทึกนี้`;
+  my = drawWrappedThaiParagraph(mctx, para2, ML, my, BODY_W, LINE_H, INDENT);
+  my += 16;
+
+  const para3 = 'จึงเรียนมาเพื่อโปรดทราบและพิจารณาอนุมัติ';
+  my = drawWrappedThaiParagraph(mctx, para3, ML, my, BODY_W, LINE_H, INDENT);
+
+  // Proposer Signature (Right)
+  const proposerCenterX = 1150;
+  let sigY = Math.max(my + 135, 1180);
+  mctx.font = '400 27px Sarabun, sans-serif';
+  mctx.textAlign = 'center';
+  mctx.fillText(`(${memo.proposerName})`, proposerCenterX, sigY);
+  mctx.fillText(memo.proposerTitle, proposerCenterX, sigY + 46);
+
+  // Approval Block (Left)
+  const leftBlockX = 240;
+  const leftSigCenterX = 520;
+  let appY = sigY + 115;
+  mctx.textAlign = 'left';
+  mctx.font = '700 27px Sarabun, sans-serif';
+  mctx.fillText('อนุมัติ', leftBlockX, appY);
+  mctx.font = '400 27px Sarabun, sans-serif';
+  mctx.fillText('เรียน  หัวหน้างานอำนวยการ', leftBlockX + 95, appY + 50);
+
+  appY += 165;
+  mctx.textAlign = 'center';
+  mctx.fillText(`(${memo.managerName})`, leftSigCenterX, appY);
+  mctx.fillText(memo.managerTitle, leftSigCenterX, appY + 46);
+  mctx.fillText('วันที่..............................................', leftSigCenterX, appY + 94);
+
+  // Forwarding to Procurement Block (Bottom Left)
+  let fwdY = appY + 195;
+  mctx.textAlign = 'left';
+  mctx.font = '700 27px Sarabun, sans-serif';
+  mctx.fillText('เรียน  พนักงานพัสดุ', leftBlockX, fwdY);
+  mctx.font = '400 27px Sarabun, sans-serif';
+  mctx.fillText('เพื่อทราบและดำเนินการต่อไป', leftBlockX + 95, fwdY + 50);
+
+  fwdY += 165;
+  mctx.textAlign = 'center';
+  mctx.fillText(`(${memo.adminHeadName})`, leftSigCenterX, fwdY);
+  mctx.fillText(memo.adminHeadTitle, leftSigCenterX, fwdY + 46);
+  mctx.fillText('วันที่..............................................', leftSigCenterX, fwdY + 94);
+  mctx.textAlign = 'left';
+
+  // Page 2+: รายชื่อติดตั้งวางท่อประปาและมาตรวัดน้ำ (Landscape A4: 2376 x 1680 px)
   const PAGE_W = 2376;
   const PAGE_H = 1680;
   const MARGIN_X = 64;
-  const CONTENT_W = PAGE_W - MARGIN_X * 2; // 2248
 
   const colDefs: Array<{ label: string; width: number; align: 'left' | 'center' }> = [
-    { label: 'ลำดับที่', width: 92, align: 'center' },
-    { label: 'ชื่อผู้ใช้น้ำ', width: 310, align: 'left' },
-    { label: 'บ้านเลขที่', width: 130, align: 'center' },
-    { label: 'หมู่', width: 80, align: 'center' },
-    { label: 'ตำบล', width: 170, align: 'center' },
-    { label: 'อำเภอ', width: 170, align: 'center' },
-    { label: 'งานเลขที่', width: 285, align: 'center' },
-    { label: 'หมายเลขมาตร', width: 315, align: 'center' },
-    { label: 'เลขที่ผู้ใช้น้ำ', width: 220, align: 'center' },
-    { label: 'วงเงินที่จะจ้าง', width: 206, align: 'center' },
-    { label: 'หมายเหตุ', width: 270, align: 'left' },
+    { label: 'ลำดับที่', width: 88, align: 'center' },
+    { label: 'ชื่อผู้ใช้น้ำ', width: 295, align: 'left' },
+    { label: 'บ้านเลขที่', width: 120, align: 'center' },
+    { label: 'หมู่', width: 75, align: 'center' },
+    { label: 'ตำบล', width: 160, align: 'center' },
+    { label: 'อำเภอ', width: 160, align: 'center' },
+    { label: 'งานเลขที่', width: 265, align: 'center' },
+    { label: 'หมายเลขมาตร', width: 280, align: 'center' },
+    { label: 'ขนาดมาตร', width: 145, align: 'center' },
+    { label: 'เลขที่ผู้ใช้น้ำ', width: 205, align: 'center' },
+    { label: 'วงเงินที่จะจ้าง', width: 195, align: 'center' },
+    { label: 'หมายเหตุ', width: 260, align: 'left' },
   ];
 
   const HEADER_H = 54;
   const ROW_H = 52;
   const TABLE_START_Y = 152;
-  const MAX_TABLE_BOTTOM_WITHOUT_SIG = PAGE_H - 90; // ~27 rows max per continuation page
-  const SIG_AREA_NEEDED = 235; // Total row + gap + 3-line signature + bottom margin
+  const MAX_TABLE_BOTTOM_WITHOUT_SIG = PAGE_H - 90;
+  const SIG_AREA_NEEDED = includeTax ? 340 : 235;
 
   const createPageCanvas = (): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } => {
     const canvas = document.createElement('canvas');
@@ -1706,13 +2282,42 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     return y + ROW_H;
   };
 
+  const drawSummaryLineRow = (
+    ctx: CanvasRenderingContext2D,
+    y: number,
+    label: string,
+    amountText: string,
+    bold = false
+  ): number => {
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.6;
+    const abWidth = colDefs[0].width + colDefs[1].width;
+    ctx.strokeRect(MARGIN_X, y, abWidth, ROW_H);
+    ctx.fillStyle = '#000000';
+    ctx.font = `${bold ? '700' : '400'} 22px Sarabun, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(label, MARGIN_X + abWidth / 2, y + 34);
+
+    let cx = MARGIN_X + abWidth;
+    for (let colIdx = 2; colIdx < colDefs.length; colIdx++) {
+      const col = colDefs[colIdx];
+      ctx.strokeRect(cx, y, col.width, ROW_H);
+      if (colIdx === 10) {
+        ctx.font = `${bold ? '700' : '400'} 22px Sarabun, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(amountText, cx + col.width / 2, y + 34);
+      }
+      cx += col.width;
+    }
+    return y + ROW_H;
+  };
+
   const pages: HTMLCanvasElement[] = [];
   let page = createPageCanvas();
   pages.push(page.canvas);
   let ctx = page.ctx;
   let curY = drawFormTitleAndHeader(ctx, 1);
 
-  let computedTotal = 0;
   batch.records.forEach((rec, idx) => {
     if (curY + ROW_H > MAX_TABLE_BOTTOM_WITHOUT_SIG) {
       page = createPageCanvas();
@@ -1721,7 +2326,6 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
       curY = drawFormTitleAndHeader(ctx, pages.length);
     }
     const f = cleanBatchTemplateFields(rec);
-    computedTotal += f.price;
     const vals = [
       String(idx + 1),
       f.fullName,
@@ -1731,6 +2335,7 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
       f.district,
       f.jobNo,
       f.meterNo,
+      f.meterSize,
       f.waterNo,
       formatBaht(f.price),
       f.note,
@@ -1738,7 +2343,6 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     curY = drawDataRow(ctx, curY, vals);
   });
 
-  // Ensure enough vertical room for minimum blank padding rows (at least 3 blank rows on single-page layout) + Total + Signature block
   if (curY + SIG_AREA_NEEDED > PAGE_H - 36) {
     page = createPageCanvas();
     pages.push(page.canvas);
@@ -1746,7 +2350,6 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     curY = drawFormTitleAndHeader(ctx, pages.length);
   }
 
-  // Pad empty bordered rows on final page to resemble the official 18-row sheet form cleanly
   const targetRowsSinglePage = Math.max(batch.records.length + 3, 18);
   const blankRowsNeeded =
     pages.length === 1
@@ -1758,54 +2361,40 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     curY = drawDataRow(ctx, curY, null);
   }
 
-  // Total row ("รวมเป็นเงิน")
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1.6;
-  const abWidth = colDefs[0].width + colDefs[1].width;
-  ctx.strokeRect(MARGIN_X, curY, abWidth, ROW_H);
-  ctx.fillStyle = '#000000';
-  ctx.font = '400 22px Sarabun, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('รวมเป็นเงิน', MARGIN_X + abWidth / 2, curY + 34);
-
-  let cx = MARGIN_X + abWidth;
-  for (let colIdx = 2; colIdx < colDefs.length; colIdx++) {
-    const col = colDefs[colIdx];
-    ctx.strokeRect(cx, curY, col.width, ROW_H);
-    if (colIdx === 9) {
-      ctx.font = '400 22px Sarabun, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(formatBaht(computedTotal), cx + col.width / 2, curY + 34);
-    }
-    cx += col.width;
+  curY = drawSummaryLineRow(ctx, curY, 'รวมเป็นเงิน', formatBaht(subtotal), false);
+  if (includeTax) {
+    curY = drawSummaryLineRow(ctx, curY, 'ภาษีมูลค่าเพิ่ม 7%', formatBaht(vatAmount), false);
+    curY = drawSummaryLineRow(ctx, curY, 'รวมเป็นเงินทั้งสิ้น', formatBaht(grandTotal), true);
   }
-  curY += ROW_H;
 
-  // Signature Block centered under columns I–K (indices 8, 9, 10)
-  const ikStartX =
+  // Signature Block centered under columns J–L (indices 9, 10, 11)
+  const jlStartX =
     MARGIN_X +
-    colDefs.slice(0, 8).reduce((s, c) => s + c.width, 0);
-  const ikWidth = colDefs[8].width + colDefs[9].width + colDefs[10].width;
-  const sigCenterX = ikStartX + ikWidth / 2;
-  const inspector = (batch.inspectorName || '').trim() || 'นายสามารถ บุญกัน';
+    colDefs.slice(0, 9).reduce((s, c) => s + c.width, 0);
+  const jlWidth = colDefs[9].width + colDefs[10].width + colDefs[11].width;
+  const sigCenterX = jlStartX + jlWidth / 2;
 
   ctx.fillStyle = '#000000';
   ctx.font = '400 22px Sarabun, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('ลงชื่อ........................................ผู้ควบคุมงาน', sigCenterX, curY + 58);
-  ctx.fillText(`(${inspector})`, sigCenterX, curY + 100);
-  ctx.fillText('นายช่างโยธา 6', sigCenterX, curY + 142);
+  ctx.fillText(`(${memo.inspectorName})`, sigCenterX, curY + 100);
+  ctx.fillText(memo.inspectorTitle, sigCenterX, curY + 142);
   ctx.textAlign = 'left';
 
   const doc = new jsPDF({
-    orientation: 'landscape',
+    orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
     compress: true,
   });
 
-  pages.forEach((canvas, idx) => {
-    if (idx > 0) doc.addPage('a4', 'landscape');
+  // First page: บันทึกข้อความ (Portrait A4: 210 x 297 mm)
+  doc.addImage(memoCanvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+
+  // Following pages: Summary table (Landscape A4: 297 x 210 mm)
+  pages.forEach((canvas) => {
+    doc.addPage('a4', 'landscape');
     doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 297, 210, undefined, 'FAST');
   });
 
