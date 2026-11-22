@@ -59,6 +59,50 @@ export interface ExportAnalytics {
 const RAL_PRIMARY = '#2271B3';
 const RAL_DEEP = '#1A5A8F';
 const RAL_SOFT = '#EDF5FC';
+const EXPORT_EXCEL_FONT_NAME = 'TH Sarabun PSK';
+const EXPORT_PDF_FONT_FAMILY = '"TH Sarabun PSK", "Sarabun", sans-serif';
+// A4 canvases are rendered at 8 px/mm. Since 1 typographic pt = 25.4/72 mm,
+// 1 pt = 2.8222 px -> 29pt = 82px, 20pt = 56px, 18pt = 51px, 16pt = 45px, 14pt = 40px.
+const SARABUN_PT_29_PX = 82;
+const SARABUN_PT_20_PX = 56;
+const SARABUN_PT_18_PX = 51;
+const SARABUN_PT_16_PX = 45;
+const SARABUN_PT_14_PX = 40;
+
+let cachedThSarabunPskPromise: Promise<void> | null = null;
+async function ensureThSarabunPskLoaded(): Promise<void> {
+  if (typeof document === 'undefined') return;
+  if (!cachedThSarabunPskPromise) {
+    cachedThSarabunPskPromise = (async () => {
+      try {
+        if (typeof FontFace !== 'undefined' && document.fonts) {
+          const variants = [
+            { weight: '400', url: '/fonts/THSarabunPSK-Regular.ttf' },
+            { weight: '500', url: '/fonts/THSarabunPSK-Regular.ttf' },
+            { weight: '600', url: '/fonts/THSarabunPSK-Bold.ttf' },
+            { weight: '700', url: '/fonts/THSarabunPSK-Bold.ttf' },
+          ];
+          await Promise.all(
+            variants.map(async ({ weight, url }) => {
+              const ff = new FontFace('TH Sarabun PSK', `url(${url})`, {
+                weight,
+                style: 'normal',
+              });
+              const loaded = await ff.load();
+              document.fonts.add(loaded);
+            })
+          );
+        }
+      } catch {
+        // Fallback gracefully if font fails to load
+      }
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+    })();
+  }
+  await cachedThSarabunPskPromise;
+}
 const PREFERRED_STATUS_ORDER = [
   'ติดตั้งเสร็จสิ้น',
   'อยู่ระหว่างติดตั้ง',
@@ -290,7 +334,7 @@ function drawDashboardSummaryBlock(
 ): number {
   const kpiGap = 18;
   const kpiW = (w - kpiGap * 3) / 4;
-  const kpiH = 98;
+  const kpiH = 112;
 
   const kpis = [
     {
@@ -338,23 +382,23 @@ function drawDashboardSummaryBlock(
     ctx.fill();
 
     ctx.fillStyle = '#64748B';
-    ctx.font = '500 18px Sarabun, "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(truncateText(ctx, item.label, kpiW - 44), kx + 32, y + 32);
+    ctx.font = `700 32px ${EXPORT_PDF_FONT_FAMILY}`;
+    ctx.fillText(truncateText(ctx, item.label, kpiW - 44), kx + 30, y + 34);
 
     ctx.fillStyle = idx === 3 ? '#0F172A' : item.accent;
-    ctx.font = '700 26px Sarabun, "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(truncateText(ctx, item.value, kpiW - 44), kx + 32, y + 63);
+    ctx.font = `700 45px ${EXPORT_PDF_FONT_FAMILY}`;
+    ctx.fillText(truncateText(ctx, item.value, kpiW - 44), kx + 30, y + 72);
 
     ctx.fillStyle = '#64748B';
-    ctx.font = '400 15px Sarabun, "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(truncateText(ctx, item.sub, kpiW - 44), kx + 32, y + 85);
+    ctx.font = `400 28px ${EXPORT_PDF_FONT_FAMILY}`;
+    ctx.fillText(truncateText(ctx, item.sub, kpiW - 44), kx + 30, y + 99);
   });
 
   // 2-Column Visual Charts Row
   const chartsY = y + kpiH + 18;
   const chartGap = 20;
   const chartW = (w - chartGap) / 2;
-  const chartH = 292;
+  const chartH = 318;
 
   // --- Left Chart: Status Donut + Breakdown ---
   ctx.fillStyle = '#FFFFFF';
@@ -365,13 +409,13 @@ function drawDashboardSummaryBlock(
   ctx.stroke();
 
   ctx.fillStyle = '#0F172A';
-  ctx.font = '700 20px Sarabun, "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('สัดส่วนความคืบหน้าและสถานะคำขอ', x + 24, chartsY + 34);
+  ctx.font = `700 36px ${EXPORT_PDF_FONT_FAMILY}`;
+  ctx.fillText('สัดส่วนความคืบหน้าและสถานะคำขอ', x + 24, chartsY + 38);
 
   const cx = x + 130;
-  const cy = chartsY + 165;
-  const outerR = 86;
-  const innerR = 52;
+  const cy = chartsY + 180;
+  const outerR = 88;
+  const innerR = 54;
 
   if (analytics.total === 0) {
     ctx.beginPath();
@@ -394,37 +438,37 @@ function drawDashboardSummaryBlock(
 
   ctx.fillStyle = '#0F172A';
   ctx.textAlign = 'center';
-  ctx.font = '700 28px Sarabun, sans-serif';
-  ctx.fillText(String(analytics.total), cx, cy + 5);
+  ctx.font = `700 45px ${EXPORT_PDF_FONT_FAMILY}`;
+  ctx.fillText(String(analytics.total), cx, cy + 6);
   ctx.fillStyle = '#64748B';
-  ctx.font = '500 15px Sarabun, sans-serif';
-  ctx.fillText('รายการ', cx, cy + 26);
+  ctx.font = `400 28px ${EXPORT_PDF_FONT_FAMILY}`;
+  ctx.fillText('รายการ', cx, cy + 32);
   ctx.textAlign = 'left';
 
   // Status Legend List on Right Half of Donut Card
-  const legX = x + 252;
-  const legW = chartW - 274;
-  let legY = chartsY + 66;
+  const legX = x + 248;
+  const legW = chartW - 270;
+  let legY = chartsY + 62;
   analytics.statusBreakdown.slice(0, 6).forEach((st) => {
     ctx.fillStyle = '#F8FAFD';
-    drawRoundedRect(ctx, legX, legY, legW, 34, 7);
+    drawRoundedRect(ctx, legX, legY, legW, 36, 7);
     ctx.fill();
 
     ctx.fillStyle = st.color;
-    drawRoundedRect(ctx, legX + 10, legY + 11, 12, 12, 3);
+    drawRoundedRect(ctx, legX + 10, legY + 12, 12, 12, 3);
     ctx.fill();
 
     ctx.fillStyle = '#1E293B';
-    ctx.font = '600 15px Sarabun, sans-serif';
-    ctx.fillText(truncateText(ctx, st.label, legW - 155), legX + 30, legY + 22);
+    ctx.font = `700 30px ${EXPORT_PDF_FONT_FAMILY}`;
+    ctx.fillText(truncateText(ctx, st.label, legW - 155), legX + 30, legY + 26);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0F172A';
-    ctx.font = '700 15px Sarabun, sans-serif';
-    ctx.fillText(`${st.count} (${st.pct}%)`, legX + legW - 12, legY + 22);
+    ctx.font = `700 30px ${EXPORT_PDF_FONT_FAMILY}`;
+    ctx.fillText(`${st.count} (${st.pct}%)`, legX + legW - 12, legY + 26);
     ctx.textAlign = 'left';
 
-    legY += 40;
+    legY += 41;
   });
 
   // --- Right Chart: Area / Subdistrict Bar Chart ---
@@ -437,34 +481,34 @@ function drawDashboardSummaryBlock(
   ctx.stroke();
 
   ctx.fillStyle = '#0F172A';
-  ctx.font = '700 20px Sarabun, "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('ปริมาณคำขอแยกตามตำบล / พื้นที่ (สูงสุด 6 อันดับ)', rx + 24, chartsY + 34);
+  ctx.font = `700 36px ${EXPORT_PDF_FONT_FAMILY}`;
+  ctx.fillText('ปริมาณคำขอแยกตามตำบล / พื้นที่ (สูงสุด 6 อันดับ)', rx + 24, chartsY + 38);
 
   const topAreas = analytics.areaBreakdown.slice(0, 6);
   if (topAreas.length === 0) {
     ctx.fillStyle = '#94A3B8';
-    ctx.font = '400 18px Sarabun, sans-serif';
-    ctx.fillText('ไม่พบข้อมูลพื้นที่', rx + 24, chartsY + 150);
+    ctx.font = `400 34px ${EXPORT_PDF_FONT_FAMILY}`;
+    ctx.fillText('ไม่พบข้อมูลพื้นที่', rx + 24, chartsY + 160);
   } else {
     const maxCount = Math.max(...topAreas.map((a) => a.count), 1);
-    let barY = chartsY + 62;
+    let barY = chartsY + 60;
     const innerW = chartW - 48;
     topAreas.forEach((area) => {
       ctx.fillStyle = '#1E293B';
-      ctx.font = '600 16px Sarabun, sans-serif';
-      ctx.fillText(truncateText(ctx, area.area, innerW - 190), rx + 24, barY + 14);
+      ctx.font = `700 30px ${EXPORT_PDF_FONT_FAMILY}`;
+      ctx.fillText(truncateText(ctx, area.area, innerW - 210), rx + 24, barY + 18);
 
       ctx.textAlign = 'right';
       ctx.fillStyle = RAL_DEEP;
-      ctx.font = '700 15px Sarabun, sans-serif';
+      ctx.font = `700 29px ${EXPORT_PDF_FONT_FAMILY}`;
       ctx.fillText(
         `${area.count} ราย · ${formatBaht(area.amount)} ฿`,
         rx + chartW - 24,
-        barY + 14
+        barY + 18
       );
       ctx.textAlign = 'left';
 
-      const trackY = barY + 22;
+      const trackY = barY + 25;
       ctx.fillStyle = '#EBF1F7';
       drawRoundedRect(ctx, rx + 24, trackY, innerW, 11, 5);
       ctx.fill();
@@ -474,7 +518,7 @@ function drawDashboardSummaryBlock(
       drawRoundedRect(ctx, rx + 24, trackY, fillW, 11, 5);
       ctx.fill();
 
-      barY += 38;
+      barY += 41;
     });
   }
 
@@ -490,13 +534,11 @@ async function renderDashboardImageBase64(
   analytics: ExportAnalytics,
   filterCtx: ExportFilterContext
 ): Promise<string> {
-  if (typeof document !== 'undefined' && document.fonts?.ready) {
-    await document.fonts.ready;
-  }
+  await ensureThSarabunPskLoaded();
 
   const canvas = document.createElement('canvas');
   canvas.width = 1600;
-  canvas.height = 510;
+  canvas.height = 565;
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
 
@@ -508,18 +550,18 @@ async function renderDashboardImageBase64(
   ctx.fillRect(0, 0, canvas.width, 6);
 
   ctx.fillStyle = '#0F172A';
-  ctx.font = '700 24px Sarabun, "Plus Jakarta Sans", sans-serif';
+  ctx.font = `700 ${SARABUN_PT_18_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   ctx.fillText(
     `ภาพแดชบอร์ดสรุปข้อมูลคำขอมาตรวัดน้ำ (${records.length} รายการที่กรอง)`,
     28,
-    40
+    46
   );
 
   ctx.fillStyle = '#475569';
-  ctx.font = '500 16px Sarabun, sans-serif';
-  ctx.fillText(`เงื่อนไขตัวกรอง: ${describeActiveFilters(filterCtx)}`, 28, 66);
+  ctx.font = `400 34px ${EXPORT_PDF_FONT_FAMILY}`;
+  ctx.fillText(`เงื่อนไขตัวกรอง: ${describeActiveFilters(filterCtx)}`, 28, 78);
 
-  drawDashboardSummaryBlock(ctx, 28, 84, canvas.width - 56, analytics);
+  drawDashboardSummaryBlock(ctx, 28, 96, canvas.width - 56, analytics);
 
   return canvas.toDataURL('image/png');
 }
@@ -581,18 +623,18 @@ function populateDetailSheet(
   ws.mergeCells(1, 1, 1, columnsCount);
   const titleCell = ws.getCell(1, 1);
   titleCell.value = title;
-  titleCell.font = { name: 'Sarabun', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 20, bold: true, color: { argb: 'FFFFFFFF' } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2271B3' } };
   titleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  ws.getRow(1).height = 28;
+  ws.getRow(1).height = 36;
 
   ws.mergeCells(2, 1, 2, columnsCount);
   const metaCell = ws.getCell(2, 1);
   metaCell.value = `ตัวกรอง: ${filterSummary}   |   วันที่ออกรายงาน: ${new Date().toLocaleString('th-TH')}`;
-  metaCell.font = { name: 'Sarabun', size: 10, color: { argb: 'FF334155' } };
+  metaCell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF334155' } };
   metaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDF5FC' } };
   metaCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  ws.getRow(2).height = 22;
+  ws.getRow(2).height = 26;
 
   const headers = [
     'ลำดับ',
@@ -611,9 +653,9 @@ function populateDetailSheet(
 
   const headerRow = ws.getRow(4);
   headerRow.values = headers;
-  headerRow.height = 24;
+  headerRow.height = 30;
   headerRow.eachCell((cell) => {
-    cell.font = { name: 'Sarabun', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5A8F' } };
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
     cell.border = {
@@ -629,7 +671,7 @@ function populateDetailSheet(
     ws.autoFilter = { from: 'A4', to: 'L4' };
   }
 
-  const colWidths = [8, 16, 16, 26, 13, 10, 32, 16, 15, 20, 24, 26];
+  const colWidths = [9, 18, 18, 28, 14, 11, 35, 18, 17, 23, 26, 28];
   colWidths.forEach((w, idx) => {
     ws.getColumn(idx + 1).width = w;
   });
@@ -642,14 +684,14 @@ function populateDetailSheet(
       ws.mergeCells(rowCursor, 1, rowCursor, columnsCount);
       const gCell = ws.getCell(rowCursor, 1);
       gCell.value = `กลุ่ม: ${grp.groupTitle}   (${grp.items.length} รายการ  ·  ยอดรวม ${formatBaht(grp.subtotal)} บาท)`;
-      gCell.font = { name: 'Sarabun', size: 11, bold: true, color: { argb: 'FF1A5A8F' } };
+      gCell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF1A5A8F' } };
       gCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD6E7F6' } };
       gCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
       gCell.border = {
         top: { style: 'thin', color: { argb: 'FF9EC4E6' } },
         bottom: { style: 'thin', color: { argb: 'FF9EC4E6' } },
       };
-      ws.getRow(rowCursor).height = 22;
+      ws.getRow(rowCursor).height = 26;
       rowCursor += 1;
     }
 
@@ -670,10 +712,10 @@ function populateDetailSheet(
         formatLatLngString(rec.latitude, rec.longitude) || 'ยังไม่ระบุพิกัด',
         rec.note || '-',
       ];
-      r.height = 20;
+      r.height = 24;
       const zebra = idx % 2 === 1;
       r.eachCell((cell, colNumber) => {
-        cell.font = { name: 'Sarabun', size: 10.5, color: { argb: 'FF1E293B' } };
+        cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF1E293B' } };
         if (zebra) {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFD' } };
         }
@@ -688,7 +730,7 @@ function populateDetailSheet(
         } else if (colNumber === 9) {
           cell.numFmt = '#,##0.00';
           cell.alignment = { vertical: 'middle', horizontal: 'right' };
-          cell.font = { name: 'Sarabun', size: 10.5, bold: true, color: { argb: 'FF0F172A' } };
+          cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF0F172A' } };
         } else {
           cell.alignment = { vertical: 'middle', horizontal: 'left' };
         }
@@ -696,8 +738,8 @@ function populateDetailSheet(
 
       const statusCell = r.getCell(10);
       statusCell.font = {
-        name: 'Sarabun',
-        size: 10.5,
+        name: EXPORT_EXCEL_FONT_NAME,
+        size: 16,
         bold: true,
         color: { argb: `FF${statusMeta.color.replace('#', '').toUpperCase()}` },
       };
@@ -714,10 +756,10 @@ function populateDetailSheet(
       subRow.getCell(9).numFmt = '#,##0.00';
       subRow.getCell(9).alignment = { vertical: 'middle', horizontal: 'right' };
       ws.mergeCells(rowCursor, 10, rowCursor, columnsCount);
-      subRow.height = 20;
+      subRow.height = 25;
       for (let c = 1; c <= columnsCount; c++) {
         const cell = subRow.getCell(c);
-        cell.font = { name: 'Sarabun', size: 10.5, bold: true, color: { argb: 'FF1A5A8F' } };
+        cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF1A5A8F' } };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F6FB' } };
         cell.border = {
           bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
@@ -738,10 +780,10 @@ function populateDetailSheet(
   ws.mergeCells(rowCursor, 10, rowCursor, columnsCount);
   totalRow.getCell(10).value = 'บาท';
   totalRow.getCell(10).alignment = { vertical: 'middle', horizontal: 'left' };
-  totalRow.height = 24;
+  totalRow.height = 28;
   for (let c = 1; c <= columnsCount; c++) {
     const cell = totalRow.getCell(c);
-    cell.font = { name: 'Sarabun', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2271B3' } };
   }
 }
@@ -762,11 +804,11 @@ export async function exportFilteredToExcel(
     views: [{ showGridLines: true }],
   });
   summaryWs.columns = [
-    { width: 28 },
-    { width: 16 },
-    { width: 16 },
+    { width: 30 },
     { width: 18 },
     { width: 18 },
+    { width: 20 },
+    { width: 22 },
     { width: 20 },
     { width: 20 },
   ];
@@ -774,18 +816,18 @@ export async function exportFilteredToExcel(
   summaryWs.mergeCells('A1:G1');
   const sTitle = summaryWs.getCell('A1');
   sTitle.value = 'ภาพแดชบอร์ดสรุปข้อมูลคำขอติดตั้ง / ย้ายมาตรวัดน้ำ';
-  sTitle.font = { name: 'Sarabun', size: 15, bold: true, color: { argb: 'FFFFFFFF' } };
+  sTitle.font = { name: EXPORT_EXCEL_FONT_NAME, size: 20, bold: true, color: { argb: 'FFFFFFFF' } };
   sTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2271B3' } };
   sTitle.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  summaryWs.getRow(1).height = 30;
+  summaryWs.getRow(1).height = 36;
 
   summaryWs.mergeCells('A2:G2');
   const sMeta = summaryWs.getCell('A2');
   sMeta.value = `ตัวกรอง: ${filterSummary}   |   รูปแบบ: ${scopeLabel(scope)}   |   วันที่ออกรายงาน: ${new Date().toLocaleString('th-TH')}`;
-  sMeta.font = { name: 'Sarabun', size: 10, color: { argb: 'FF334155' } };
+  sMeta.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF334155' } };
   sMeta.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDF5FC' } };
   sMeta.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  summaryWs.getRow(2).height = 22;
+  summaryWs.getRow(2).height = 26;
 
   // Render & embed visual Dashboard Summary image
   const dashboardPng = await renderDashboardImageBase64(records, analytics, filterCtx);
@@ -797,27 +839,27 @@ export async function exportFilteredToExcel(
     });
     summaryWs.addImage(imgId, {
       tl: { col: 0, row: 3 },
-      ext: { width: 920, height: 293 },
+      ext: { width: 920, height: 325 },
     });
-    nextRow = 20;
+    nextRow = 21;
   }
 
   // Structured KPI + Status Summary Table
   summaryWs.mergeCells(nextRow, 1, nextRow, 4);
   const stHeaderTitle = summaryWs.getCell(nextRow, 1);
   stHeaderTitle.value = 'ตารางสรุปตามสถานะคำขอ';
-  stHeaderTitle.font = { name: 'Sarabun', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+  stHeaderTitle.font = { name: EXPORT_EXCEL_FONT_NAME, size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
   stHeaderTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2271B3' } };
   stHeaderTitle.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  summaryWs.getRow(nextRow).height = 24;
+  summaryWs.getRow(nextRow).height = 30;
   nextRow += 1;
 
   const stCols = summaryWs.getRow(nextRow);
   stCols.values = ['สถานะคำขอ', 'จำนวน (รายการ)', 'สัดส่วน (%)', 'ยอดรวม (บาท)'];
-  stCols.height = 22;
+  stCols.height = 26;
   for (let c = 1; c <= 4; c++) {
     const cell = stCols.getCell(c);
-    cell.font = { name: 'Sarabun', size: 10.5, bold: true, color: { argb: 'FF1A5A8F' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF1A5A8F' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDF5FC' } };
     cell.alignment = { vertical: 'middle', horizontal: c === 1 ? 'left' : 'right' };
     cell.border = { bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } } };
@@ -827,17 +869,20 @@ export async function exportFilteredToExcel(
   analytics.statusBreakdown.forEach((st) => {
     const r = summaryWs.getRow(nextRow);
     r.values = [st.label, st.count, st.pct / 100, st.amount];
-    r.height = 20;
+    r.height = 24;
     r.getCell(1).font = {
-      name: 'Sarabun',
-      size: 10.5,
+      name: EXPORT_EXCEL_FONT_NAME,
+      size: 16,
       bold: true,
       color: { argb: `FF${st.color.replace('#', '').toUpperCase()}` },
     };
+    r.getCell(2).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF1E293B' } };
     r.getCell(2).numFmt = '#,##0';
     r.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
+    r.getCell(3).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF1E293B' } };
     r.getCell(3).numFmt = '0%';
     r.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
+    r.getCell(4).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF1E293B' } };
     r.getCell(4).numFmt = '#,##0.00';
     r.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' };
     for (let c = 1; c <= 4; c++) {
@@ -848,10 +893,10 @@ export async function exportFilteredToExcel(
 
   const stTotalRow = summaryWs.getRow(nextRow);
   stTotalRow.values = ['รวมทั้งสิ้น', analytics.total, 1, analytics.totalAmount];
-  stTotalRow.height = 22;
+  stTotalRow.height = 26;
   for (let c = 1; c <= 4; c++) {
     const cell = stTotalRow.getCell(c);
-    cell.font = { name: 'Sarabun', size: 10.5, bold: true, color: { argb: 'FF0F172A' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF0F172A' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
     cell.border = { top: { style: 'thin', color: { argb: 'FF94A3B8' } }, bottom: { style: 'double', color: { argb: 'FF94A3B8' } } };
   }
@@ -865,10 +910,10 @@ export async function exportFilteredToExcel(
   summaryWs.mergeCells(nextRow, 1, nextRow, 6);
   const arHeaderTitle = summaryWs.getCell(nextRow, 1);
   arHeaderTitle.value = 'ตารางสรุปแยกตามตำบล / พื้นที่';
-  arHeaderTitle.font = { name: 'Sarabun', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+  arHeaderTitle.font = { name: EXPORT_EXCEL_FONT_NAME, size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
   arHeaderTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2271B3' } };
   arHeaderTitle.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  summaryWs.getRow(nextRow).height = 24;
+  summaryWs.getRow(nextRow).height = 30;
   nextRow += 1;
 
   const arCols = summaryWs.getRow(nextRow);
@@ -880,10 +925,10 @@ export async function exportFilteredToExcel(
     'รอชำระเงิน',
     'ยอดรวม (บาท)',
   ];
-  arCols.height = 22;
+  arCols.height = 26;
   for (let c = 1; c <= 6; c++) {
     const cell = arCols.getCell(c);
-    cell.font = { name: 'Sarabun', size: 10.5, bold: true, color: { argb: 'FF1A5A8F' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF1A5A8F' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDF5FC' } };
     cell.alignment = { vertical: 'middle', horizontal: c === 1 ? 'left' : 'right' };
     cell.border = { bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } } };
@@ -893,12 +938,14 @@ export async function exportFilteredToExcel(
   analytics.areaBreakdown.forEach((ar) => {
     const r = summaryWs.getRow(nextRow);
     r.values = [ar.area, ar.count, ar.completed, ar.inProgress, ar.unpaid, ar.amount];
-    r.height = 20;
-    r.getCell(1).font = { name: 'Sarabun', size: 10.5, bold: true, color: { argb: 'FF1E293B' } };
+    r.height = 24;
+    r.getCell(1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF1E293B' } };
     for (let c = 2; c <= 5; c++) {
+      r.getCell(c).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF1E293B' } };
       r.getCell(c).numFmt = '#,##0';
       r.getCell(c).alignment = { horizontal: 'right', vertical: 'middle' };
     }
+    r.getCell(6).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF1E293B' } };
     r.getCell(6).numFmt = '#,##0.00';
     r.getCell(6).alignment = { horizontal: 'right', vertical: 'middle' };
     for (let c = 1; c <= 6; c++) {
@@ -977,9 +1024,7 @@ export async function exportFilteredToPdf(
   filterCtx: ExportFilterContext,
   scope: ExportScope = 'all'
 ): Promise<string> {
-  if (typeof document !== 'undefined' && document.fonts?.ready) {
-    await document.fonts.ready;
-  }
+  await ensureThSarabunPskLoaded();
 
   const analytics = computeExportAnalytics(records);
   const filterSummary = describeActiveFilters(filterCtx);
@@ -1009,24 +1054,28 @@ export async function exportFilteredToPdf(
   // A4 Landscape 297mm x 210mm rendered at 8 px/mm -> 2376 x 1680 px
   const PAGE_W = 2376;
   const PAGE_H = 1680;
-  const MARGIN_X = 64;
+  const MARGIN_X = 52;
   const CONTENT_W = PAGE_W - MARGIN_X * 2;
-  const FOOTER_Y = PAGE_H - 44;
+  const FOOTER_Y = PAGE_H - 42;
 
   const colDefs = [
-    { label: 'ลำดับ', width: 72, align: 'center' as const },
-    { label: 'เลขที่ RQ', width: 175, align: 'left' as const },
-    { label: 'วันที่ยื่นคำร้อง', width: 165, align: 'left' as const },
-    { label: 'ชื่อ - สกุล', width: 320, align: 'left' as const },
-    { label: 'ที่อยู่ / หมู่ที่ / พื้นที่', width: 470, align: 'left' as const },
-    { label: 'เบอร์โทร', width: 175, align: 'left' as const },
-    { label: 'ราคา (บาท)', width: 175, align: 'right' as const },
-    { label: 'สถานะ', width: 220, align: 'left' as const },
-    { label: 'พิกัด (lat, long)', width: CONTENT_W - (72 + 175 + 165 + 320 + 470 + 175 + 175 + 220), align: 'left' as const },
+    { label: 'ลำดับ', width: 95, align: 'center' as const },
+    { label: 'เลขที่ RQ', width: 195, align: 'left' as const },
+    { label: 'วันที่ยื่นคำร้อง', width: 195, align: 'left' as const },
+    { label: 'ชื่อ - สกุล', width: 330, align: 'left' as const },
+    { label: 'ที่อยู่ / หมู่ที่ / พื้นที่', width: 520, align: 'left' as const },
+    { label: 'เบอร์โทร', width: 190, align: 'left' as const },
+    { label: 'ราคา (บาท)', width: 190, align: 'right' as const },
+    { label: 'สถานะ', width: 260, align: 'left' as const },
+    {
+      label: 'พิกัด (lat, long)',
+      width: CONTENT_W - (95 + 195 + 195 + 330 + 520 + 190 + 190 + 260),
+      align: 'left' as const,
+    },
   ];
 
-  const ROW_H = 44;
-  const HEADER_H = 46;
+  const ROW_H = 54;
+  const HEADER_H = 58;
 
   const pages: HTMLCanvasElement[] = [];
 
@@ -1049,18 +1098,18 @@ export async function exportFilteredToPdf(
     ctx.fill();
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '700 18px Sarabun, "Plus Jakarta Sans", sans-serif';
+    ctx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     let cx = MARGIN_X;
     colDefs.forEach((col) => {
       if (col.align === 'center') {
         ctx.textAlign = 'center';
-        ctx.fillText(col.label, cx + col.width / 2, y + 29);
+        ctx.fillText(col.label, cx + col.width / 2, y + 40);
       } else if (col.align === 'right') {
         ctx.textAlign = 'right';
-        ctx.fillText(col.label, cx + col.width - 14, y + 29);
+        ctx.fillText(col.label, cx + col.width - 14, y + 40);
       } else {
         ctx.textAlign = 'left';
-        ctx.fillText(col.label, cx + 12, y + 29);
+        ctx.fillText(col.label, cx + 12, y + 40);
       }
       cx += col.width;
     });
@@ -1082,24 +1131,24 @@ export async function exportFilteredToPdf(
       ctx.strokeRect(MARGIN_X, y, CONTENT_W, ROW_H);
 
       ctx.fillStyle = RAL_DEEP;
-      ctx.font = '700 19px Sarabun, sans-serif';
+      ctx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
       ctx.fillText(
         `ส่วนข้อมูล: ${item.title}   (${item.count.toLocaleString('th-TH')} รายการ  ·  ยอดรวม ${formatBaht(item.subtotal)} บาท)`,
         MARGIN_X + 16,
-        y + 28
+        y + 38
       );
       return y + ROW_H;
     }
 
     if (item.kind === 'grand_total') {
       ctx.fillStyle = '#E6F0FA';
-      ctx.fillRect(MARGIN_X, y, CONTENT_W, ROW_H + 4);
+      ctx.fillRect(MARGIN_X, y, CONTENT_W, ROW_H + 6);
       ctx.strokeStyle = RAL_PRIMARY;
       ctx.lineWidth = 2;
-      ctx.strokeRect(MARGIN_X, y, CONTENT_W, ROW_H + 4);
+      ctx.strokeRect(MARGIN_X, y, CONTENT_W, ROW_H + 6);
 
       ctx.fillStyle = RAL_DEEP;
-      ctx.font = '700 20px Sarabun, sans-serif';
+      ctx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
       ctx.textAlign = 'right';
       const priceRightX =
         MARGIN_X + colDefs.slice(0, 7).reduce((acc, c) => acc + c.width, 0) - 14;
@@ -1108,11 +1157,11 @@ export async function exportFilteredToPdf(
       ctx.fillText(
         `รวมทั้งสิ้นตามรายการที่กรอง (${item.count.toLocaleString('th-TH')} รายการ)`,
         labelRightX,
-        y + 30
+        y + 41
       );
-      ctx.fillText(`${formatBaht(item.amount)} ฿`, priceRightX, y + 30);
+      ctx.fillText(`${formatBaht(item.amount)} ฿`, priceRightX, y + 41);
       ctx.textAlign = 'left';
-      return y + ROW_H + 4;
+      return y + ROW_H + 6;
     }
 
     // Standard record row
@@ -1156,27 +1205,27 @@ export async function exportFilteredToPdf(
       ctx.fillStyle = idx === 3 || idx === 6 ? '#0F172A' : '#334155';
       ctx.font =
         idx === 3 || idx === 6
-          ? '600 17px Sarabun, sans-serif'
-          : '400 17px Sarabun, sans-serif';
+          ? `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`
+          : `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
 
       if (idx === 7) {
         // Status colored dot + label
         ctx.fillStyle = statusMeta.color;
         ctx.beginPath();
-        ctx.arc(cx + 18, y + ROW_H / 2, 5.5, 0, Math.PI * 2);
+        ctx.arc(cx + 18, y + ROW_H / 2, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#1E293B';
-        ctx.font = '600 17px Sarabun, sans-serif';
-        ctx.fillText(truncateText(ctx, val, col.width - 34), cx + 30, y + 28);
+        ctx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
+        ctx.fillText(truncateText(ctx, val, col.width - 36), cx + 32, y + 38);
       } else if (col.align === 'center') {
         ctx.textAlign = 'center';
-        ctx.fillText(truncateText(ctx, val, col.width - 14), cx + col.width / 2, y + 28);
+        ctx.fillText(truncateText(ctx, val, col.width - 14), cx + col.width / 2, y + 38);
       } else if (col.align === 'right') {
         ctx.textAlign = 'right';
-        ctx.fillText(truncateText(ctx, val, col.width - 20), cx + col.width - 14, y + 28);
+        ctx.fillText(truncateText(ctx, val, col.width - 20), cx + col.width - 14, y + 38);
       } else {
         ctx.textAlign = 'left';
-        ctx.fillText(truncateText(ctx, val, col.width - 20), cx + 12, y + 28);
+        ctx.fillText(truncateText(ctx, val, col.width - 20), cx + 12, y + 38);
       }
       cx += col.width;
     });
@@ -1191,38 +1240,38 @@ export async function exportFilteredToPdf(
 
   // Report Header Card
   ctx.fillStyle = '#0F172A';
-  ctx.font = '700 32px Sarabun, "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('รายงานสรุปและติดตามคำขอติดตั้ง / ย้ายมาตรวัดน้ำ', MARGIN_X, 64);
+  ctx.font = `700 ${SARABUN_PT_20_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
+  ctx.fillText('รายงานสรุปและติดตามคำขอติดตั้ง / ย้ายมาตรวัดน้ำ', MARGIN_X, 66);
 
   ctx.fillStyle = '#475569';
-  ctx.font = '500 18px Sarabun, sans-serif';
+  ctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   ctx.fillText(
     `${scopeLabel(scope)}  ·  แสดง ${analytics.total.toLocaleString('th-TH')} จากทั้งหมด ${filterCtx.totalUnfilteredCount.toLocaleString('th-TH')} รายการ`,
     MARGIN_X,
-    96
+    108
   );
 
   ctx.textAlign = 'right';
   ctx.fillStyle = '#64748B';
-  ctx.font = '500 17px Sarabun, sans-serif';
+  ctx.font = `400 ${SARABUN_PT_14_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   ctx.fillText(
     `ออกรายงานเมื่อ ${new Date().toLocaleString('th-TH')}`,
     PAGE_W - MARGIN_X,
     62
   );
   ctx.fillStyle = RAL_DEEP;
-  ctx.font = '600 17px Sarabun, sans-serif';
+  ctx.font = `700 ${SARABUN_PT_14_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   ctx.fillText(
-    truncateText(ctx, `ตัวกรอง: ${filterSummary}`, 1100),
+    truncateText(ctx, `ตัวกรอง: ${filterSummary}`, 1080),
     PAGE_W - MARGIN_X,
-    94
+    104
   );
   ctx.textAlign = 'left';
 
   // Dashboard Summary Canvas Container
-  const dashBoxY = 118;
+  const dashBoxY = 128;
   ctx.fillStyle = '#F3F6FA';
-  drawRoundedRect(ctx, MARGIN_X - 12, dashBoxY, CONTENT_W + 24, 446, 16);
+  drawRoundedRect(ctx, MARGIN_X - 12, dashBoxY, CONTENT_W + 24, 482, 16);
   ctx.fill();
   const dashBottom = drawDashboardSummaryBlock(
     ctx,
@@ -1233,20 +1282,20 @@ export async function exportFilteredToPdf(
   );
 
   // Table Section Title on Page 1
-  let curY = Math.max(dashBottom + 42, 594);
+  let curY = Math.max(dashBottom + 48, 646);
   ctx.fillStyle = '#0F172A';
-  ctx.font = '700 22px Sarabun, sans-serif';
+  ctx.font = `700 ${SARABUN_PT_18_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   ctx.fillText('รายละเอียดรายการคำขอตามเงื่อนไขที่กรอง', MARGIN_X, curY);
-  curY += 16;
+  curY += 18;
   curY = drawTableHeader(ctx, curY);
 
   let rowIdx = 0;
   let zebra = 0;
-  const maxBodyY = FOOTER_Y - 36;
+  const maxBodyY = FOOTER_Y - 38;
 
   while (rowIdx < flatRows.length) {
     const item = flatRows[rowIdx];
-    const neededH = item.kind === 'grand_total' ? ROW_H + 4 : ROW_H;
+    const neededH = item.kind === 'grand_total' ? ROW_H + 6 : ROW_H;
 
     if (curY + neededH > maxBodyY) {
       page = createPageCanvas();
@@ -1255,20 +1304,20 @@ export async function exportFilteredToPdf(
 
       // Continuation page compact header
       ctx.fillStyle = '#0F172A';
-      ctx.font = '700 24px Sarabun, sans-serif';
-      ctx.fillText('รายงานรายการคำขอติดตั้ง / ย้ายมาตรวัดน้ำ (ต่อ)', MARGIN_X, 58);
+      ctx.font = `700 ${SARABUN_PT_18_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
+      ctx.fillText('รายงานรายการคำขอติดตั้ง / ย้ายมาตรวัดน้ำ (ต่อ)', MARGIN_X, 62);
 
       ctx.textAlign = 'right';
       ctx.fillStyle = '#64748B';
-      ctx.font = '500 16px Sarabun, sans-serif';
+      ctx.font = `400 ${SARABUN_PT_14_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
       ctx.fillText(
-        truncateText(ctx, `ตัวกรอง: ${filterSummary}`, 1100),
+        truncateText(ctx, `ตัวกรอง: ${filterSummary}`, 1080),
         PAGE_W - MARGIN_X,
-        58
+        62
       );
       ctx.textAlign = 'left';
 
-      curY = drawTableHeader(ctx, 82);
+      curY = drawTableHeader(ctx, 88);
     }
 
     if (item.kind === 'group') {
@@ -1295,21 +1344,21 @@ export async function exportFilteredToPdf(
     pCtx.strokeStyle = '#E2E8F0';
     pCtx.lineWidth = 1;
     pCtx.beginPath();
-    pCtx.moveTo(MARGIN_X, FOOTER_Y - 16);
-    pCtx.lineTo(PAGE_W - MARGIN_X, FOOTER_Y - 16);
+    pCtx.moveTo(MARGIN_X, FOOTER_Y - 18);
+    pCtx.lineTo(PAGE_W - MARGIN_X, FOOTER_Y - 18);
     pCtx.stroke();
 
     pCtx.fillStyle = '#64748B';
-    pCtx.font = '500 15px Sarabun, sans-serif';
+    pCtx.font = `400 ${SARABUN_PT_14_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     pCtx.fillText(
       'ระบบวิเคราะห์และติดตามคำขอติดตั้ง/ย้ายมาตรวัดน้ำ · เชื่อมโยง Google Sheets / AppSheet แบบเรียลไทม์',
       MARGIN_X,
-      FOOTER_Y + 6
+      FOOTER_Y + 14
     );
     pCtx.textAlign = 'right';
     pCtx.fillStyle = RAL_DEEP;
-    pCtx.font = '700 16px Sarabun, sans-serif';
-    pCtx.fillText(`หน้า ${idx + 1} / ${totalPages}`, PAGE_W - MARGIN_X, FOOTER_Y + 6);
+    pCtx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
+    pCtx.fillText(`หน้า ${idx + 1} / ${totalPages}`, PAGE_W - MARGIN_X, FOOTER_Y + 14);
     pCtx.textAlign = 'left';
 
     if (idx > 0) {
@@ -1546,7 +1595,7 @@ function drawPwaOfficialSeal(
 
   // Curved text along bottom arc: การประปาส่วนภูมิภาค
   const sealLabel = 'การประปาส่วนภูมิภาค';
-  ctx.font = '700 13px Sarabun, sans-serif';
+  ctx.font = `700 16px ${EXPORT_PDF_FONT_FAMILY}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const textRadius = radius - 16.5;
@@ -1564,6 +1613,165 @@ function drawPwaOfficialSeal(
   });
 
   ctx.restore();
+}
+
+const PWA_SEAL_ASSET_URL = '/assets/aistudio/image_601d835b.png';
+let cachedBwSealCanvasPromise: Promise<HTMLCanvasElement | null> | null = null;
+
+function loadBlackAndWhitePwaSealCanvas(): Promise<HTMLCanvasElement | null> {
+  if (typeof document === 'undefined' || typeof Image === 'undefined') {
+    return Promise.resolve(null);
+  }
+  if (cachedBwSealCanvasPromise) return cachedBwSealCanvasPromise;
+
+  cachedBwSealCanvasPromise = new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        if (!w || !h) {
+          resolve(null);
+          return;
+        }
+
+        const tmp = document.createElement('canvas');
+        tmp.width = w;
+        tmp.height = h;
+        const tctx = tmp.getContext('2d');
+        if (!tctx) {
+          resolve(null);
+          return;
+        }
+        tctx.drawImage(img, 0, 0, w, h);
+        const srcData = tctx.getImageData(0, 0, w, h);
+        const data = srcData.data;
+
+        const lumAt = (idx: number) => {
+          const p = idx * 4;
+          if (data[p + 3] < 20) return 255;
+          return 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
+        };
+
+        // Flood-fill dark pixels touching the outer perimeter to strip the rectangular frame
+        const isOuterFrame = new Uint8Array(w * h);
+        const queue = new Int32Array(w * h);
+        let qHead = 0;
+        let qTail = 0;
+
+        const trySeed = (x: number, y: number) => {
+          const idx = y * w + x;
+          if (!isOuterFrame[idx] && lumAt(idx) < 215) {
+            isOuterFrame[idx] = 1;
+            queue[qTail++] = idx;
+          }
+        };
+
+        for (let x = 0; x < w; x++) {
+          trySeed(x, 0);
+          trySeed(x, h - 1);
+        }
+        for (let y = 0; y < h; y++) {
+          trySeed(0, y);
+          trySeed(w - 1, y);
+        }
+
+        while (qHead < qTail) {
+          const idx = queue[qHead++];
+          const x = idx % w;
+          const y = (idx - x) / w;
+          if (x > 0) trySeed(x - 1, y);
+          if (x + 1 < w) trySeed(x + 1, y);
+          if (y > 0) trySeed(x, y - 1);
+          if (y + 1 < h) trySeed(x, y + 1);
+        }
+
+        // Find tight bounding box of the circular seal interior
+        let minX = w;
+        let minY = h;
+        let maxX = -1;
+        let maxY = -1;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = y * w + x;
+            if (!isOuterFrame[idx] && lumAt(idx) < 210) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+
+        if (maxX <= minX || maxY <= minY) {
+          resolve(null);
+          return;
+        }
+
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        const radius = Math.max(maxX - minX, maxY - minY) / 2;
+        const pad = 4;
+        const outSize = Math.ceil(radius * 2) + pad * 2;
+
+        const out = document.createElement('canvas');
+        out.width = outSize;
+        out.height = outSize;
+        const octx = out.getContext('2d');
+        if (!octx) {
+          resolve(null);
+          return;
+        }
+
+        const outImg = octx.createImageData(outSize, outSize);
+        const od = outImg.data;
+        const outCenter = outSize / 2;
+        const maxR2 = (radius + 2) * (radius + 2);
+
+        for (let oy = 0; oy < outSize; oy++) {
+          const sy = Math.round(cy + (oy - outCenter));
+          if (sy < 0 || sy >= h) continue;
+          for (let ox = 0; ox < outSize; ox++) {
+            const sx = Math.round(cx + (ox - outCenter));
+            if (sx < 0 || sx >= w) continue;
+            const dx = ox - outCenter;
+            const dy = oy - outCenter;
+            if (dx * dx + dy * dy > maxR2) continue;
+
+            const sIdx = sy * w + sx;
+            if (isOuterFrame[sIdx]) continue;
+
+            const lum = lumAt(sIdx);
+            const oP = (oy * outSize + ox) * 4;
+            if (lum >= 232) {
+              od[oP] = 255;
+              od[oP + 1] = 255;
+              od[oP + 2] = 255;
+              od[oP + 3] = 0;
+            } else {
+              // Pure high-contrast black & white grayscale
+              const gray = Math.max(0, Math.min(255, Math.round((lum - 28) * 1.15)));
+              const alpha = Math.max(0, Math.min(255, Math.round((242 - lum) * 2.4)));
+              od[oP] = gray;
+              od[oP + 1] = gray;
+              od[oP + 2] = gray;
+              od[oP + 3] = alpha;
+            }
+          }
+        }
+
+        octx.putImageData(outImg, 0, 0);
+        resolve(out);
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = PWA_SEAL_ASSET_URL;
+  });
+
+  return cachedBwSealCanvasPromise;
 }
 
 export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promise<string> {
@@ -1606,56 +1814,70 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     memoWs.getColumn(idx + 1).width = w;
   });
 
+  const bwSealCanvas = await loadBlackAndWhitePwaSealCanvas();
+
   memoWs.mergeCells(1, 1, 2, 8);
   const memoTitleCell = memoWs.getCell(1, 1);
   memoTitleCell.value = 'บันทึกข้อความ';
-  memoTitleCell.font = { name: 'Sarabun', size: 22, bold: true, color: { argb: 'FF000000' } };
+  memoTitleCell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 29, bold: true, color: { argb: 'FF000000' } };
   memoTitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(1).height = 24;
-  memoWs.getRow(2).height = 24;
+  memoWs.getRow(1).height = 40;
+  memoWs.getRow(2).height = 40;
 
-  // Row 3: หน่วยงาน
-  memoWs.getRow(3).height = 22;
+  if (bwSealCanvas) {
+    const sealBase64 = bwSealCanvas.toDataURL('image/png');
+    const sealImageId = workbook.addImage({
+      base64: sealBase64,
+      extension: 'png',
+    });
+    memoWs.addImage(sealImageId, {
+      tl: { col: 0.18, row: 0.12 },
+      ext: { width: 84, height: 84 },
+    });
+  }
+
+  // Row 3: หน่วยงาน (หัวข้อ 20pt ตัวหนา, ข้อความ 16pt ตามมาตรฐานงานสารบรรณ)
+  memoWs.getRow(3).height = 28;
   memoWs.getCell(3, 1).value = 'หน่วยงาน';
-  memoWs.getCell(3, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getCell(3, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 20, bold: true, color: { argb: 'FF000000' } };
   memoWs.mergeCells(3, 2, 3, 8);
   memoWs.getCell(3, 2).value = 'การประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี งานบริการและควบคุมน้ำสูญเสีย';
-  memoWs.getCell(3, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(3, 2).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   for (let c = 2; c <= 8; c++) memoWs.getCell(3, c).border = bottomThinBorder;
 
-  // Row 4: ที่ ... วันที่ ...
-  memoWs.getRow(4).height = 22;
+  // Row 4: ที่ ... วันที่ ... (หัวข้อ 20pt ตัวหนา, ข้อความ 16pt)
+  memoWs.getRow(4).height = 28;
   memoWs.getCell(4, 1).value = 'ที่';
-  memoWs.getCell(4, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getCell(4, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 20, bold: true, color: { argb: 'FF000000' } };
   memoWs.mergeCells(4, 2, 4, 4);
   memoWs.getCell(4, 2).value = memo.docNo;
-  memoWs.getCell(4, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(4, 2).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   for (let c = 2; c <= 4; c++) memoWs.getCell(4, c).border = bottomThinBorder;
 
   memoWs.getCell(4, 5).value = 'วันที่';
-  memoWs.getCell(4, 5).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getCell(4, 5).font = { name: EXPORT_EXCEL_FONT_NAME, size: 20, bold: true, color: { argb: 'FF000000' } };
   memoWs.getCell(4, 5).alignment = { vertical: 'middle', horizontal: 'right' };
   memoWs.mergeCells(4, 6, 4, 8);
   memoWs.getCell(4, 6).value = memo.approvalDateText;
-  memoWs.getCell(4, 6).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(4, 6).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   for (let c = 6; c <= 8; c++) memoWs.getCell(4, c).border = bottomThinBorder;
 
-  // Row 5: เรื่อง
-  memoWs.getRow(5).height = 22;
+  // Row 5: เรื่อง (หัวข้อ 20pt ตัวหนา, ข้อความ 16pt)
+  memoWs.getRow(5).height = 28;
   memoWs.getCell(5, 1).value = 'เรื่อง';
-  memoWs.getCell(5, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getCell(5, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 20, bold: true, color: { argb: 'FF000000' } };
   memoWs.mergeCells(5, 2, 5, 8);
   memoWs.getCell(5, 2).value = 'ขออนุมัติจ้างเหมา งานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่';
-  memoWs.getCell(5, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(5, 2).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   for (let c = 2; c <= 8; c++) memoWs.getCell(5, c).border = bottomThinBorder;
 
-  // Row 6: เรียน
-  memoWs.getRow(6).height = 24;
+  // Row 6: เรียน (16pt ตามงานสารบรรณ)
+  memoWs.getRow(6).height = 26;
   memoWs.getCell(6, 1).value = 'เรียน';
-  memoWs.getCell(6, 1).font = { name: 'Sarabun', size: 13, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getCell(6, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.mergeCells(6, 2, 6, 8);
   memoWs.getCell(6, 2).value = 'ผู้จัดการการประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี';
-  memoWs.getCell(6, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(6, 2).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
 
   memoWs.getRow(7).height = 10;
 
@@ -1666,9 +1888,9 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     `        ด้วยงานบริการและควบคุมน้ำสูญเสีย มีความจำเป็นเร่งด่วนต้องดำเนินการติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
     `เพื่อให้ผู้ใช้น้ำได้รับการบริการรวดเร็วในการติดตั้งวางท่อประปาและมาตรวัดน้ำ ขนาด ${memo.meterSizeText} ` +
     `ซึ่งมีความสำคัญในการเพิ่มจำนวนผู้ใช้น้ำและเป็นการให้บริการอย่างรวดเร็วเพื่อให้ทันต่อความต้องการของผู้ใช้น้ำ`;
-  p1Cell.font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  p1Cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   p1Cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-  memoWs.getRow(8).height = 68;
+  memoWs.getRow(8).height = 84;
 
   // Row 9: Paragraph 2
   memoWs.mergeCells(9, 1, 9, 8);
@@ -1676,96 +1898,96 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   p2Cell.value =
     `        ดังนั้น งานบริการและควบคุมน้ำสูญเสีย จึงขออนุมัติจ้างเหมางานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
     `จำนวน ${batch.records.length} ราย เป็นเงินทั้งสิ้น ${formatBaht(grandTotal)} -บาท (${taxNote}) ดังรายละเอียดที่แนบมาพร้อมบันทึกนี้`;
-  p2Cell.font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  p2Cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   p2Cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-  memoWs.getRow(9).height = 50;
+  memoWs.getRow(9).height = 62;
 
   // Row 10: Paragraph 3
   memoWs.mergeCells(10, 1, 10, 8);
   const p3Cell = memoWs.getCell(10, 1);
   p3Cell.value = '        จึงเรียนมาเพื่อโปรดทราบและพิจารณาอนุมัติ';
-  p3Cell.font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  p3Cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   p3Cell.alignment = { vertical: 'middle', horizontal: 'left' };
-  memoWs.getRow(10).height = 24;
+  memoWs.getRow(10).height = 26;
 
   memoWs.getRow(11).height = 28;
 
   // Rows 12-13: Proposer Block (Right side)
   memoWs.mergeCells(12, 5, 12, 8);
   memoWs.getCell(12, 5).value = `(${memo.proposerName})`;
-  memoWs.getCell(12, 5).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(12, 5).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(12, 5).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(12).height = 20;
+  memoWs.getRow(12).height = 24;
 
   memoWs.mergeCells(13, 5, 13, 8);
   memoWs.getCell(13, 5).value = memo.proposerTitle;
-  memoWs.getCell(13, 5).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(13, 5).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(13, 5).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(13).height = 20;
+  memoWs.getRow(13).height = 24;
 
   // Approval block (Left side)
   memoWs.mergeCells(14, 1, 14, 4);
   memoWs.getCell(14, 1).value = 'อนุมัติ';
-  memoWs.getCell(14, 1).font = { name: 'Sarabun', size: 12.5, bold: true, color: { argb: 'FF000000' } };
-  memoWs.getRow(14).height = 20;
+  memoWs.getCell(14, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getRow(14).height = 24;
 
   memoWs.mergeCells(15, 2, 15, 5);
   memoWs.getCell(15, 2).value = 'เรียน  หัวหน้างานอำนวยการ';
-  memoWs.getCell(15, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
-  memoWs.getRow(15).height = 20;
+  memoWs.getCell(15, 2).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
+  memoWs.getRow(15).height = 24;
 
-  memoWs.getRow(16).height = 26;
+  memoWs.getRow(16).height = 28;
 
   memoWs.mergeCells(17, 1, 17, 4);
   memoWs.getCell(17, 1).value = `(${memo.managerName})`;
-  memoWs.getCell(17, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(17, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(17, 1).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(17).height = 20;
+  memoWs.getRow(17).height = 24;
 
   memoWs.mergeCells(18, 1, 18, 4);
   memoWs.getCell(18, 1).value = memo.managerTitle;
-  memoWs.getCell(18, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(18, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(18, 1).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(18).height = 20;
+  memoWs.getRow(18).height = 24;
 
   memoWs.mergeCells(19, 1, 19, 4);
   memoWs.getCell(19, 1).value = 'วันที่.......................................';
-  memoWs.getCell(19, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(19, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(19, 1).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(19).height = 20;
+  memoWs.getRow(19).height = 24;
 
   memoWs.getRow(20).height = 16;
 
   // Admin head forwarding block (Bottom left)
   memoWs.mergeCells(21, 1, 21, 4);
   memoWs.getCell(21, 1).value = 'เรียน  พนักงานพัสดุ';
-  memoWs.getCell(21, 1).font = { name: 'Sarabun', size: 12.5, bold: true, color: { argb: 'FF000000' } };
-  memoWs.getRow(21).height = 20;
+  memoWs.getCell(21, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF000000' } };
+  memoWs.getRow(21).height = 24;
 
   memoWs.mergeCells(22, 2, 22, 5);
   memoWs.getCell(22, 2).value = 'เพื่อทราบและดำเนินการต่อไป';
-  memoWs.getCell(22, 2).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
-  memoWs.getRow(22).height = 20;
+  memoWs.getCell(22, 2).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
+  memoWs.getRow(22).height = 24;
 
-  memoWs.getRow(23).height = 26;
+  memoWs.getRow(23).height = 28;
 
   memoWs.mergeCells(24, 1, 24, 4);
   memoWs.getCell(24, 1).value = `(${memo.adminHeadName})`;
-  memoWs.getCell(24, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(24, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(24, 1).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(24).height = 20;
+  memoWs.getRow(24).height = 24;
 
   memoWs.mergeCells(25, 1, 25, 4);
   memoWs.getCell(25, 1).value = memo.adminHeadTitle;
-  memoWs.getCell(25, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(25, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(25, 1).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(25).height = 20;
+  memoWs.getRow(25).height = 24;
 
   memoWs.mergeCells(26, 1, 26, 4);
   memoWs.getCell(26, 1).value = 'วันที่.......................................';
-  memoWs.getCell(26, 1).font = { name: 'Sarabun', size: 12.5, color: { argb: 'FF000000' } };
+  memoWs.getCell(26, 1).font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   memoWs.getCell(26, 1).alignment = { vertical: 'middle', horizontal: 'center' };
-  memoWs.getRow(26).height = 20;
+  memoWs.getRow(26).height = 24;
 
   // Sheet 2: แบบฟอร์มมาตรฐาน กปภ. (12 คอลัมน์ A–L รวมขนาดมาตร)
   const ws = workbook.addWorksheet('รายชื่อติดตั้งมาตรวัดน้ำ');
@@ -1787,7 +2009,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     },
   };
 
-  [8, 24, 11, 7, 13, 13, 20, 21, 12, 16, 14, 18].forEach((w, idx) => {
+  [9, 26, 12, 8, 15, 15, 22, 22, 13, 18, 16, 20].forEach((w, idx) => {
     ws.getColumn(idx + 1).width = w;
   });
 
@@ -1795,16 +2017,16 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   ws.mergeCells(1, 1, 1, colsCount);
   const title1 = ws.getCell(1, 1);
   title1.value = 'รายชื่อติดตั้งวางท่อประปาและมาตรวัดน้ำ';
-  title1.font = { name: 'Sarabun', size: 14, bold: true, color: { argb: 'FF000000' } };
+  title1.font = { name: EXPORT_EXCEL_FONT_NAME, size: 20, bold: true, color: { argb: 'FF000000' } };
   title1.alignment = { vertical: 'middle', horizontal: 'center' };
-  ws.getRow(1).height = 24;
+  ws.getRow(1).height = 30;
 
   ws.mergeCells(2, 1, 2, colsCount);
   const title2 = ws.getCell(2, 1);
   title2.value = 'งานบริการและควบคุมน้ำสูญเสีย การประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี';
-  title2.font = { name: 'Sarabun', size: 12, bold: true, color: { argb: 'FF000000' } };
+  title2.font = { name: EXPORT_EXCEL_FONT_NAME, size: 18, bold: true, color: { argb: 'FF000000' } };
   title2.alignment = { vertical: 'middle', horizontal: 'center' };
-  ws.getRow(2).height = 22;
+  ws.getRow(2).height = 28;
 
   // Row 3: Table Header (12 columns A–L)
   const headerRow = ws.getRow(3);
@@ -1822,10 +2044,10 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     'วงเงินที่จะจ้าง',
     'หมายเหตุ',
   ];
-  headerRow.height = 24;
+  headerRow.height = 30;
   for (let c = 1; c <= colsCount; c++) {
     const cell = headerRow.getCell(c);
-    cell.font = { name: 'Sarabun', size: 11, bold: true, color: { argb: 'FF000000' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF000000' } };
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
     cell.border = thinBlackBorder;
   }
@@ -1838,7 +2060,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   for (let i = 0; i < bodyRowCount; i++) {
     const rowIdx = startBodyRow + i;
     const r = ws.getRow(rowIdx);
-    r.height = 20;
+    r.height = 24;
 
     if (i < batch.records.length) {
       const f = cleanBatchTemplateFields(batch.records[i]);
@@ -1863,7 +2085,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
 
     for (let c = 1; c <= colsCount; c++) {
       const cell = r.getCell(c);
-      cell.font = { name: 'Sarabun', size: 10.5, color: { argb: 'FF000000' } };
+      cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
       cell.border = thinBlackBorder;
       if (c === 2) {
         cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
@@ -1882,13 +2104,13 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   const lastBodyRow = startBodyRow + bodyRowCount - 1;
   const totalRowIdx = lastBodyRow + 1;
   const totRow = ws.getRow(totalRowIdx);
-  totRow.height = 22;
+  totRow.height = 26;
 
   ws.mergeCells(totalRowIdx, 1, totalRowIdx, 2);
   totRow.getCell(1).value = 'รวมเป็นเงิน';
   for (let c = 1; c <= colsCount; c++) {
     const cell = totRow.getCell(c);
-    cell.font = { name: 'Sarabun', size: 11, bold: false, color: { argb: 'FF000000' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: false, color: { argb: 'FF000000' } };
     cell.border = thinBlackBorder;
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   }
@@ -1898,19 +2120,19 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
     result: computedTotal,
   };
   sumCell.numFmt = '#,##0.00';
-  sumCell.font = { name: 'Sarabun', size: 11, bold: false, color: { argb: 'FF000000' } };
+  sumCell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: false, color: { argb: 'FF000000' } };
   sumCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
   let afterTotalsRowIdx = totalRowIdx;
   if (includeTax) {
     const vatRowIdx = totalRowIdx + 1;
     const vatRow = ws.getRow(vatRowIdx);
-    vatRow.height = 22;
+    vatRow.height = 26;
     ws.mergeCells(vatRowIdx, 1, vatRowIdx, 2);
     vatRow.getCell(1).value = 'ภาษีมูลค่าเพิ่ม 7%';
     for (let c = 1; c <= colsCount; c++) {
       const cell = vatRow.getCell(c);
-      cell.font = { name: 'Sarabun', size: 11, bold: false, color: { argb: 'FF000000' } };
+      cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: false, color: { argb: 'FF000000' } };
       cell.border = thinBlackBorder;
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     }
@@ -1923,12 +2145,12 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
 
     const grandRowIdx = vatRowIdx + 1;
     const grandRow = ws.getRow(grandRowIdx);
-    grandRow.height = 22;
+    grandRow.height = 26;
     ws.mergeCells(grandRowIdx, 1, grandRowIdx, 2);
     grandRow.getCell(1).value = 'รวมเป็นเงินทั้งสิ้น';
     for (let c = 1; c <= colsCount; c++) {
       const cell = grandRow.getCell(c);
-      cell.font = { name: 'Sarabun', size: 11, bold: true, color: { argb: 'FF000000' } };
+      cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FF000000' } };
       cell.border = thinBlackBorder;
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     }
@@ -1948,25 +2170,25 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   ws.mergeCells(sigRow1, 10, sigRow1, 12);
   const sigCell1 = ws.getCell(sigRow1, 10);
   sigCell1.value = 'ลงชื่อ........................................ผู้ควบคุมงาน';
-  sigCell1.font = { name: 'Sarabun', size: 11, color: { argb: 'FF000000' } };
+  sigCell1.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   sigCell1.alignment = { vertical: 'middle', horizontal: 'center' };
-  ws.getRow(sigRow1).height = 20;
+  ws.getRow(sigRow1).height = 24;
 
   const sigRow2 = afterTotalsRowIdx + 3;
   ws.mergeCells(sigRow2, 10, sigRow2, 12);
   const sigCell2 = ws.getCell(sigRow2, 10);
   sigCell2.value = `(${memo.inspectorName})`;
-  sigCell2.font = { name: 'Sarabun', size: 11, color: { argb: 'FF000000' } };
+  sigCell2.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   sigCell2.alignment = { vertical: 'middle', horizontal: 'center' };
-  ws.getRow(sigRow2).height = 20;
+  ws.getRow(sigRow2).height = 24;
 
   const sigRow3 = afterTotalsRowIdx + 4;
   ws.mergeCells(sigRow3, 10, sigRow3, 12);
   const sigCell3 = ws.getCell(sigRow3, 10);
   sigCell3.value = memo.inspectorTitle;
-  sigCell3.font = { name: 'Sarabun', size: 11, color: { argb: 'FF000000' } };
+  sigCell3.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF000000' } };
   sigCell3.alignment = { vertical: 'middle', horizontal: 'center' };
-  ws.getRow(sigRow3).height = 20;
+  ws.getRow(sigRow3).height = 24;
 
   // Sheet 3: ตารางตามชีท (A-K) สำหรับวางเข้า Google Sheets โดยตรง
   const sheetWs = workbook.addWorksheet('ตารางตามชีท (A-K)');
@@ -1985,14 +2207,14 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
   ];
   const ajHeaderRow = sheetWs.getRow(1);
   ajHeaderRow.values = ajHeaders;
-  ajHeaderRow.height = 24;
+  ajHeaderRow.height = 28;
   ajHeaderRow.eachCell((cell) => {
-    cell.font = { name: 'Sarabun', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2271B3' } };
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
   sheetWs.views = [{ state: 'frozen', ySplit: 1 }];
-  [18, 18, 26, 11, 18, 20, 18, 16, 20, 22, 14].forEach((w, idx) => {
+  [20, 20, 28, 12, 20, 22, 20, 18, 22, 24, 15].forEach((w, idx) => {
     sheetWs.getColumn(idx + 1).width = w;
   });
 
@@ -2012,9 +2234,9 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
       (rec.meterNumber ?? '').trim(),
       (rec.meterSize ?? '').trim(),
     ];
-    r.height = 20;
+    r.height = 24;
     r.eachCell((cell) => {
-      cell.font = { name: 'Sarabun', size: 10.5, color: { argb: 'FF1E293B' } };
+      cell.font = { name: EXPORT_EXCEL_FONT_NAME, size: 16, color: { argb: 'FF1E293B' } };
       cell.alignment = { vertical: 'middle', horizontal: 'left' };
     });
   });
@@ -2036,9 +2258,7 @@ export async function exportCompletedBatchToExcel(batch: CompletedBatch): Promis
 }
 
 export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<string> {
-  if (typeof document !== 'undefined' && document.fonts?.ready) {
-    await document.fonts.ready;
-  }
+  await ensureThSarabunPskLoaded();
 
   const { subtotal, includeTax, vatAmount, grandTotal, taxNote } =
     resolveBatchFinancials(batch);
@@ -2054,17 +2274,24 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
   mctx.fillStyle = '#FFFFFF';
   mctx.fillRect(0, 0, MEMO_W, MEMO_H);
 
-  drawPwaOfficialSeal(mctx, 250, 210, 86);
+  const bwSealCanvas = await loadBlackAndWhitePwaSealCanvas();
+  if (bwSealCanvas) {
+    const sealSize = 200;
+    mctx.drawImage(bwSealCanvas, 150, 88, sealSize, sealSize);
+  } else {
+    drawPwaOfficialSeal(mctx, 250, 188, 86);
+  }
 
+  // ตามระเบียบงานสารบรรณ: บันทึกข้อความ 29pt ตัวหนา (82px @ 8px/mm)
   mctx.fillStyle = '#000000';
-  mctx.font = '700 52px Sarabun, sans-serif';
+  mctx.font = `700 ${SARABUN_PT_29_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   mctx.textAlign = 'center';
-  mctx.fillText('บันทึกข้อความ', MEMO_W / 2 + 40, 232);
+  mctx.fillText('บันทึกข้อความ', MEMO_W / 2 + 30, 212);
 
-  // Official Memo Header Lines
-  const ML = 165;
-  const MR = 1515;
-  let my = 360;
+  // Official Memo Header Lines (หัวข้อ หน่วยงาน/ที่/วันที่/เรื่อง 20pt ตัวหนา = 56px, ข้อความ 16pt = 45px)
+  const ML = 150;
+  const MR = 1530;
+  let my = 345;
 
   const drawUnderlinedField = (
     label: string,
@@ -2074,17 +2301,17 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     yPos: number
   ) => {
     mctx.textAlign = 'left';
-    mctx.font = '700 28px Sarabun, sans-serif';
+    mctx.font = `700 ${SARABUN_PT_20_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     mctx.fillText(label, startX, yPos);
     const labelW = mctx.measureText(label).width + 14;
-    mctx.font = '400 27px Sarabun, sans-serif';
+    mctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     mctx.fillText(val, startX + labelW + 8, yPos);
 
     mctx.strokeStyle = '#000000';
     mctx.lineWidth = 1.4;
     mctx.beginPath();
-    mctx.moveTo(startX + labelW, yPos + 8);
-    mctx.lineTo(endX, yPos + 8);
+    mctx.moveTo(startX + labelW, yPos + 10);
+    mctx.lineTo(endX, yPos + 10);
     mctx.stroke();
   };
 
@@ -2095,10 +2322,10 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     MR,
     my
   );
-  my += 56;
-  drawUnderlinedField('ที่', memo.docNo, ML, 825, my);
-  drawUnderlinedField('วันที่', memo.approvalDateText, 855, MR, my);
-  my += 56;
+  my += 62;
+  drawUnderlinedField('ที่', memo.docNo, ML, 820, my);
+  drawUnderlinedField('วันที่', memo.approvalDateText, 850, MR, my);
+  my += 62;
   drawUnderlinedField(
     'เรื่อง',
     'ขออนุมัติจ้างเหมา งานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่',
@@ -2106,102 +2333,102 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     MR,
     my
   );
-  my += 58;
-
-  mctx.textAlign = 'left';
-  mctx.font = '700 28px Sarabun, sans-serif';
-  mctx.fillText('เรียน', ML, my);
-  const deanLabelW = mctx.measureText('เรียน').width + 18;
-  mctx.font = '400 27px Sarabun, sans-serif';
-  mctx.fillText('ผู้จัดการการประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี', ML + deanLabelW, my);
   my += 68;
 
-  // Body Paragraphs
-  mctx.font = '400 27px Sarabun, sans-serif';
+  // คำขึ้นต้น "เรียน" และเนื้อความทั้งหมด 16pt (45px @ 8px/mm)
+  mctx.textAlign = 'left';
+  mctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
+  mctx.fillText('เรียน', ML, my);
+  const deanLabelW = mctx.measureText('เรียน').width + 18;
+  mctx.fillText('ผู้จัดการการประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี', ML + deanLabelW, my);
+  my += 72;
+
+  // Body Paragraphs (16pt = 45px, ระยะย่อหน้า 2.5 ซม. ประมาณ 115px จากขอบข้อความ, ระยะบรรทัด 58px)
+  mctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   const BODY_W = MR - ML;
-  const LINE_H = 48;
-  const INDENT = 92;
+  const LINE_H = 58;
+  const INDENT = 115;
 
   const para1 =
     `ด้วยงานบริการและควบคุมน้ำสูญเสีย มีความจำเป็นเร่งด่วนต้องดำเนินการติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
     `เพื่อให้ผู้ใช้น้ำได้รับการบริการรวดเร็วในการติดตั้งวางท่อประปาและมาตรวัดน้ำ ขนาด ${memo.meterSizeText} ` +
     `ซึ่งมีความสำคัญในการเพิ่มจำนวนผู้ใช้น้ำและเป็นการให้บริการอย่างรวดเร็วเพื่อให้ทันต่อความต้องการของผู้ใช้น้ำ`;
   my = drawWrappedThaiParagraph(mctx, para1, ML, my, BODY_W, LINE_H, INDENT);
-  my += 16;
+  my += 18;
 
   const para2 =
     `ดังนั้น งานบริการและควบคุมน้ำสูญเสีย จึงขออนุมัติจ้างเหมางานติดตั้งวางท่อประปาและมาตรวัดน้ำให้ผู้ใช้น้ำรายใหม่ ` +
     `จำนวน ${batch.records.length} ราย เป็นเงินทั้งสิ้น ${formatBaht(grandTotal)} -บาท (${taxNote}) ดังรายละเอียดที่แนบมาพร้อมบันทึกนี้`;
   my = drawWrappedThaiParagraph(mctx, para2, ML, my, BODY_W, LINE_H, INDENT);
-  my += 16;
+  my += 18;
 
   const para3 = 'จึงเรียนมาเพื่อโปรดทราบและพิจารณาอนุมัติ';
   my = drawWrappedThaiParagraph(mctx, para3, ML, my, BODY_W, LINE_H, INDENT);
 
-  // Proposer Signature (Right)
-  const proposerCenterX = 1150;
-  let sigY = Math.max(my + 135, 1180);
-  mctx.font = '400 27px Sarabun, sans-serif';
+  // Proposer Signature (Right) - 16pt (45px)
+  const proposerCenterX = 1160;
+  let sigY = Math.max(my + 130, 1230);
+  mctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   mctx.textAlign = 'center';
   mctx.fillText(`(${memo.proposerName})`, proposerCenterX, sigY);
-  mctx.fillText(memo.proposerTitle, proposerCenterX, sigY + 46);
+  mctx.fillText(memo.proposerTitle, proposerCenterX, sigY + 54);
 
-  // Approval Block (Left)
-  const leftBlockX = 240;
+  // Approval Block (Left) - 16pt (45px)
+  const leftBlockX = 225;
   const leftSigCenterX = 520;
   let appY = sigY + 115;
   mctx.textAlign = 'left';
-  mctx.font = '700 27px Sarabun, sans-serif';
+  mctx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   mctx.fillText('อนุมัติ', leftBlockX, appY);
-  mctx.font = '400 27px Sarabun, sans-serif';
-  mctx.fillText('เรียน  หัวหน้างานอำนวยการ', leftBlockX + 95, appY + 50);
+  mctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
+  mctx.fillText('เรียน  หัวหน้างานอำนวยการ', leftBlockX + 100, appY + 56);
 
-  appY += 165;
+  appY += 170;
   mctx.textAlign = 'center';
   mctx.fillText(`(${memo.managerName})`, leftSigCenterX, appY);
-  mctx.fillText(memo.managerTitle, leftSigCenterX, appY + 46);
-  mctx.fillText('วันที่..............................................', leftSigCenterX, appY + 94);
+  mctx.fillText(memo.managerTitle, leftSigCenterX, appY + 54);
+  mctx.fillText('วันที่..............................................', leftSigCenterX, appY + 108);
 
-  // Forwarding to Procurement Block (Bottom Left)
-  let fwdY = appY + 195;
+  // Forwarding to Procurement Block (Bottom Left) - 16pt (45px)
+  let fwdY = appY + 190;
   mctx.textAlign = 'left';
-  mctx.font = '700 27px Sarabun, sans-serif';
+  mctx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   mctx.fillText('เรียน  พนักงานพัสดุ', leftBlockX, fwdY);
-  mctx.font = '400 27px Sarabun, sans-serif';
-  mctx.fillText('เพื่อทราบและดำเนินการต่อไป', leftBlockX + 95, fwdY + 50);
+  mctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
+  mctx.fillText('เพื่อทราบและดำเนินการต่อไป', leftBlockX + 100, fwdY + 56);
 
-  fwdY += 165;
+  fwdY += 170;
   mctx.textAlign = 'center';
   mctx.fillText(`(${memo.adminHeadName})`, leftSigCenterX, fwdY);
-  mctx.fillText(memo.adminHeadTitle, leftSigCenterX, fwdY + 46);
-  mctx.fillText('วันที่..............................................', leftSigCenterX, fwdY + 94);
+  mctx.fillText(memo.adminHeadTitle, leftSigCenterX, fwdY + 54);
+  mctx.fillText('วันที่..............................................', leftSigCenterX, fwdY + 108);
   mctx.textAlign = 'left';
 
   // Page 2+: รายชื่อติดตั้งวางท่อประปาและมาตรวัดน้ำ (Landscape A4: 2376 x 1680 px)
   const PAGE_W = 2376;
   const PAGE_H = 1680;
-  const MARGIN_X = 64;
+  const MARGIN_X = 52;
 
   const colDefs: Array<{ label: string; width: number; align: 'left' | 'center' }> = [
-    { label: 'ลำดับที่', width: 88, align: 'center' },
-    { label: 'ชื่อผู้ใช้น้ำ', width: 295, align: 'left' },
-    { label: 'บ้านเลขที่', width: 120, align: 'center' },
-    { label: 'หมู่', width: 75, align: 'center' },
-    { label: 'ตำบล', width: 160, align: 'center' },
-    { label: 'อำเภอ', width: 160, align: 'center' },
-    { label: 'งานเลขที่', width: 265, align: 'center' },
-    { label: 'หมายเลขมาตร', width: 280, align: 'center' },
-    { label: 'ขนาดมาตร', width: 145, align: 'center' },
+    { label: 'ลำดับที่', width: 110, align: 'center' },
+    { label: 'ชื่อผู้ใช้น้ำ', width: 335, align: 'left' },
+    { label: 'บ้านเลขที่', width: 125, align: 'center' },
+    { label: 'หมู่', width: 70, align: 'center' },
+    { label: 'ตำบล', width: 165, align: 'center' },
+    { label: 'อำเภอ', width: 180, align: 'center' },
+    { label: 'งานเลขที่', width: 245, align: 'center' },
+    { label: 'หมายเลขมาตร', width: 255, align: 'center' },
+    { label: 'ขนาดมาตร', width: 135, align: 'center' },
     { label: 'เลขที่ผู้ใช้น้ำ', width: 205, align: 'center' },
-    { label: 'วงเงินที่จะจ้าง', width: 195, align: 'center' },
-    { label: 'หมายเหตุ', width: 260, align: 'left' },
+    { label: 'วงเงินที่จะจ้าง', width: 205, align: 'center' },
+    { label: 'หมายเหตุ', width: 242, align: 'left' },
   ];
 
-  const HEADER_H = 54;
-  const ROW_H = 52;
-  const TABLE_START_Y = 152;
-  const MAX_TABLE_BOTTOM_WITHOUT_SIG = PAGE_H - 90;
-  const SIG_AREA_NEEDED = includeTax ? 340 : 235;
+  const HEADER_H = 60;
+  const ROW_H = 56;
+  const TABLE_START_Y = 168;
+  const MAX_TABLE_BOTTOM_WITHOUT_SIG = PAGE_H - 72;
+  const SIG_AREA_NEEDED = includeTax ? 375 : 265;
 
   const createPageCanvas = (): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } => {
     const canvas = document.createElement('canvas');
@@ -2219,32 +2446,32 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
   ): number => {
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
-    ctx.font = '700 34px Sarabun, sans-serif';
+    ctx.font = `700 ${SARABUN_PT_20_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     ctx.fillText(
       pageNumber > 1
         ? 'รายชื่อติดตั้งวางท่อประปาและมาตรวัดน้ำ (ต่อ)'
         : 'รายชื่อติดตั้งวางท่อประปาและมาตรวัดน้ำ',
       PAGE_W / 2,
-      74
+      78
     );
-    ctx.font = '700 28px Sarabun, sans-serif';
+    ctx.font = `700 ${SARABUN_PT_18_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     ctx.fillText(
       'งานบริการและควบคุมน้ำสูญเสีย การประปาส่วนภูมิภาคสาขาขาณุวรลักษบุรี',
       PAGE_W / 2,
-      118
+      132
     );
 
     const y = TABLE_START_Y;
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 1.6;
-    ctx.font = '700 21px Sarabun, sans-serif';
+    ctx.font = `700 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
 
     let cx = MARGIN_X;
     colDefs.forEach((col) => {
       ctx.strokeRect(cx, y, col.width, HEADER_H);
       ctx.fillStyle = '#000000';
       ctx.textAlign = 'center';
-      ctx.fillText(col.label, cx + col.width / 2, y + 35);
+      ctx.fillText(col.label, cx + col.width / 2, y + 42);
       cx += col.width;
     });
     ctx.textAlign = 'left';
@@ -2258,7 +2485,7 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
   ): number => {
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 1.4;
-    ctx.font = '400 21px Sarabun, sans-serif';
+    ctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     ctx.fillStyle = '#000000';
 
     let cx = MARGIN_X;
@@ -2269,10 +2496,10 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
         if (val) {
           if (col.align === 'center') {
             ctx.textAlign = 'center';
-            ctx.fillText(truncateText(ctx, val, col.width - 14), cx + col.width / 2, y + 34);
+            ctx.fillText(truncateText(ctx, val, col.width - 12), cx + col.width / 2, y + 39);
           } else {
             ctx.textAlign = 'left';
-            ctx.fillText(truncateText(ctx, val, col.width - 22), cx + 12, y + 34);
+            ctx.fillText(truncateText(ctx, val, col.width - 20), cx + 10, y + 39);
           }
         }
       }
@@ -2294,18 +2521,18 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     const abWidth = colDefs[0].width + colDefs[1].width;
     ctx.strokeRect(MARGIN_X, y, abWidth, ROW_H);
     ctx.fillStyle = '#000000';
-    ctx.font = `${bold ? '700' : '400'} 22px Sarabun, sans-serif`;
+    ctx.font = `${bold ? '700' : '400'} ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
     ctx.textAlign = 'center';
-    ctx.fillText(label, MARGIN_X + abWidth / 2, y + 34);
+    ctx.fillText(label, MARGIN_X + abWidth / 2, y + 39);
 
     let cx = MARGIN_X + abWidth;
     for (let colIdx = 2; colIdx < colDefs.length; colIdx++) {
       const col = colDefs[colIdx];
       ctx.strokeRect(cx, y, col.width, ROW_H);
       if (colIdx === 10) {
-        ctx.font = `${bold ? '700' : '400'} 22px Sarabun, sans-serif`;
+        ctx.font = `${bold ? '700' : '400'} ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
         ctx.textAlign = 'center';
-        ctx.fillText(amountText, cx + col.width / 2, y + 34);
+        ctx.fillText(amountText, cx + col.width / 2, y + 39);
       }
       cx += col.width;
     }
@@ -2350,7 +2577,7 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     curY = drawFormTitleAndHeader(ctx, pages.length);
   }
 
-  const targetRowsSinglePage = Math.max(batch.records.length + 3, 18);
+  const targetRowsSinglePage = Math.max(batch.records.length + 3, 15);
   const blankRowsNeeded =
     pages.length === 1
       ? Math.max(3, targetRowsSinglePage - batch.records.length)
@@ -2367,7 +2594,7 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
     curY = drawSummaryLineRow(ctx, curY, 'รวมเป็นเงินทั้งสิ้น', formatBaht(grandTotal), true);
   }
 
-  // Signature Block centered under columns J–L (indices 9, 10, 11)
+  // Signature Block centered under columns J–L (indices 9, 10, 11) - 16pt (45px)
   const jlStartX =
     MARGIN_X +
     colDefs.slice(0, 9).reduce((s, c) => s + c.width, 0);
@@ -2375,11 +2602,11 @@ export async function exportCompletedBatchToPdf(batch: CompletedBatch): Promise<
   const sigCenterX = jlStartX + jlWidth / 2;
 
   ctx.fillStyle = '#000000';
-  ctx.font = '400 22px Sarabun, sans-serif';
+  ctx.font = `400 ${SARABUN_PT_16_PX}px ${EXPORT_PDF_FONT_FAMILY}`;
   ctx.textAlign = 'center';
-  ctx.fillText('ลงชื่อ........................................ผู้ควบคุมงาน', sigCenterX, curY + 58);
-  ctx.fillText(`(${memo.inspectorName})`, sigCenterX, curY + 100);
-  ctx.fillText(memo.inspectorTitle, sigCenterX, curY + 142);
+  ctx.fillText('ลงชื่อ........................................ผู้ควบคุมงาน', sigCenterX, curY + 64);
+  ctx.fillText(`(${memo.inspectorName})`, sigCenterX, curY + 114);
+  ctx.fillText(memo.inspectorTitle, sigCenterX, curY + 164);
   ctx.textAlign = 'left';
 
   const doc = new jsPDF({
